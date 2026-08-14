@@ -13,12 +13,25 @@ void gm_door_init(GmDoor* door) {
     uint32_t token = furi_hal_random_get();
     snprintf(door->id, sizeof(door->id), "door_%08lx", (unsigned long)token);
 
-    // Serials are 28-bit for KeeLoq and 32-bit for Security+ 2.0; masking to 28
-    // bits keeps one value valid for every generator we drive.
-    door->serial = furi_hal_random_get() & 0x0FFFFFFFUL;
+    // Left unconstrained here; gm_door_apply_brand() narrows it to whatever
+    // pattern the chosen brand requires.
+    door->serial = furi_hal_random_get();
     door->counter = 0;
     door->managed = true;
     strlcpy(door->name, "New door", sizeof(door->name));
+}
+
+void gm_door_apply_brand(GmDoor* door, const GmBrand* brand) {
+    furi_assert(door);
+    furi_assert(brand);
+
+    strlcpy(door->brand_id, brand->id, sizeof(door->brand_id));
+    door->frequency = brand->freqs[0];
+    door->button = brand->button;
+    door->all_bands = brand->multiband;
+
+    if(brand->serial_mask != 0) door->serial &= brand->serial_mask;
+    door->counter = brand->counter_start;
 }
 
 void gm_door_path(const GmDoor* door, char* out, size_t out_size) {

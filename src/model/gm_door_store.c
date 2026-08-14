@@ -51,6 +51,9 @@ static bool gm_store_read_one(Storage* storage, const char* path, GmDoor* door) 
 
         if(!flipper_format_read_bool(ff, "Managed", &door->managed, 1)) break;
 
+        // Optional, so records written before multi-band support still load.
+        flipper_format_read_bool(ff, "AllBands", &door->all_bands, 1);
+
         // Imported doors carry a path to the .sub we transmit verbatim. Managed
         // doors have no such field, so a missing key is not an error here.
         if(flipper_format_read_string(ff, "SubFile", buffer)) {
@@ -131,6 +134,9 @@ bool gm_store_save(Storage* storage, const GmDoor* door) {
 
         bool managed = door->managed;
         if(!flipper_format_write_bool(ff, "Managed", &managed, 1)) break;
+
+        bool all_bands = door->all_bands;
+        if(!flipper_format_write_bool(ff, "AllBands", &all_bands, 1)) break;
 
         if(!managed && door->sub_path[0] != '\0') {
             if(!flipper_format_write_string_cstr(ff, "SubFile", door->sub_path)) break;

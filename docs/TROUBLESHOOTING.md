@@ -61,6 +61,31 @@ Work through these in order — the first three cover most cases.
 
 ---
 
+## It paired — I heard the click — but the door never responds
+
+Classic Security+ 2.0 symptom, and usually one of two things.
+
+**1. The door is on a single band.** These receivers listen on 310, 315 and
+390 MHz. One band can be enough to get through LEARN and then unreliable in
+normal use. Re-add the door and choose **All bands**.
+
+**2. The door was created before GarageMate masked serials.** Security+ 2.0
+remotes must have bits `0x80000C03` clear in their serial to look like a real
+850LM. Earlier versions generated a fully random serial, which an opener will
+accept during LEARN and then ignore forever.
+
+Check your `.door` file — if `Serial` fails this, the door cannot be fixed by
+re-pairing alone:
+
+```bash
+python3 -c "s=<Serial from the file>; print('conforms:', s & 0x80000C03 == 0)"
+```
+
+Either way the fix is the same: **delete the door and add it again**, choosing
+All bands. The new remote gets a conforming serial, so it is a different remote
+as far as the opener is concerned and must be paired fresh. Clearing the old one
+out of the opener is optional — it will simply sit unused in its memory.
+
 ## It worked, then stopped
 
 Rolling-code openers track a counter and reject codes that look too old. If the

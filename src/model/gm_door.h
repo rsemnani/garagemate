@@ -49,6 +49,11 @@ typedef struct {
     uint32_t counter;
     /** True when GarageMate generated this remote and re-derives its payload. */
     bool managed;
+    /**
+     * Send every press on all of the brand's frequencies rather than just
+     * @c frequency, matching how a tri-band remote behaves.
+     */
+    bool all_bands;
     /** Source .sub file for imported doors; empty for managed ones. */
     char sub_path[GM_PATH_MAX];
 } GmDoor;
@@ -61,6 +66,15 @@ typedef struct {
 
 /** Reset @p door to a blank managed door with a fresh random id and serial. */
 void gm_door_init(GmDoor* door);
+
+/**
+ * Configure @p door for @p brand: identity, default frequency and button, plus
+ * the brand's serial pattern and starting counter.
+ *
+ * Call this after gm_door_init() when the user picks a brand. Getting the
+ * serial pattern wrong is not harmless -- see GmBrand::serial_mask.
+ */
+void gm_door_apply_brand(GmDoor* door, const GmBrand* brand);
 
 /** Fill @p out with the absolute path of @p door's .door file. */
 void gm_door_path(const GmDoor* door, char* out, size_t out_size);

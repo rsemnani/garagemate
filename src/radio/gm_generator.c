@@ -34,7 +34,8 @@ static void gm_preset_reset(SubGhzRadioPreset* preset) {
 static bool gm_generator_build_fixed(
     FlipperFormat* ff,
     const GmDoor* door,
-    const GmBrand* brand) {
+    const GmBrand* brand,
+    uint32_t frequency) {
     furi_check(brand->bits > 0 && brand->bits <= 64);
 
     uint64_t mask = (brand->bits >= 64) ? UINT64_MAX : ((1ULL << brand->bits) - 1);
@@ -49,7 +50,6 @@ static bool gm_generator_build_fixed(
         key_bytes[i] = (uint8_t)(key >> (56 - 8 * i));
     }
 
-    uint32_t frequency = door->frequency;
     uint32_t bits = brand->bits;
 
     bool ok = false;
@@ -79,13 +79,14 @@ bool gm_generator_build(
     FlipperFormat* ff,
     const GmDoor* door,
     const GmBrand* brand,
-    uint32_t counter) {
+    uint32_t counter,
+    uint32_t frequency) {
     furi_assert(ff);
     furi_assert(door);
     furi_assert(brand);
 
     if(brand->kind == GmProtoFixed) {
-        return gm_generator_build_fixed(ff, door, brand);
+        return gm_generator_build_fixed(ff, door, brand, frequency);
     }
 
     if(transmitter == NULL) {
@@ -94,7 +95,7 @@ bool gm_generator_build(
     }
 
     SubGhzRadioPreset preset;
-    gm_preset_init(&preset, door->frequency);
+    gm_preset_init(&preset, frequency);
     void* encoder = subghz_transmitter_get_protocol_instance(transmitter);
     bool ok = false;
 

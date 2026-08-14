@@ -60,6 +60,13 @@ bool garagemate_scene_open_on_event(void* context, SceneManagerEvent event) {
         app->last_status = gm_open_transmit(app);
         bool ok = (app->last_status == GmTxOk);
 
+        // Walking the user forward is the whole point of the guide, so a send
+        // that worked should land them on the next step without a keypress.
+        if(ok && scene_manager_has_previous_scene(app->scene_manager, GmScenePair) &&
+           app->draft_brand != NULL && app->pair_step + 1 < app->draft_brand->step_count) {
+            app->pair_step++;
+        }
+
         Popup* popup = app->popup;
         popup_set_header(popup, ok ? "Sent" : "Failed", 64, 20, AlignCenter, AlignBottom);
         popup_set_text(
@@ -73,6 +80,11 @@ bool garagemate_scene_open_on_event(void* context, SceneManagerEvent event) {
         popup_set_context(popup, app);
         popup_set_timeout(popup, GM_RESULT_TIMEOUT_MS);
         popup_enable_timeout(popup);
+
+        // The popup arms its timer when the view is entered, and this view was
+        // entered before the timeout was configured -- so re-enter it, or the
+        // result would sit there until the user pressed something.
+        view_dispatcher_switch_to_view(app->view_dispatcher, GmViewPopup);
 
         garagemate_notify(app, ok);
         return true;

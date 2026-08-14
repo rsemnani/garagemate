@@ -54,7 +54,11 @@ void garagemate_scene_door_on_enter(void* context) {
     widget_add_string_element(widget, 0, 15, AlignLeft, AlignTop, FontSecondary, brand_name);
 
     char detail[40];
-    gm_format_frequency(app->draft.frequency, detail, sizeof(detail));
+    if(app->draft.all_bands && app->draft_brand != NULL) {
+        snprintf(detail, sizeof(detail), "All %u bands", (unsigned)app->draft_brand->freq_count);
+    } else {
+        gm_format_frequency(app->draft.frequency, detail, sizeof(detail));
+    }
     widget_add_string_element(widget, 0, 26, AlignLeft, AlignTop, FontSecondary, detail);
 
     if(app->draft.managed && app->draft_brand != NULL && app->draft_brand->rolling) {

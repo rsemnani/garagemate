@@ -23,7 +23,8 @@ static const GmPairStep steps_chamberlain_sp2[] = {
     {.title = "3. Transmit",
      "Stand within a few feet of the motor unit.\n\n"
      "Press OK to send the new remote code twice, the way a real remote does "
-     "when you press it.",
+     "when you press it. On All bands it goes out on 315, 310 and 390 MHz "
+     "each time.",
      true},
     {.title = "4. Confirm",
      "The opener LED blinks or the lights flash once -- that means the remote "
@@ -125,11 +126,16 @@ static const GmBrand brands[] = {
         .keeloq_mfg = NULL,
         .bits = 0,
         .te = 0,
-        .freqs = {315000000, 390000000, 310000000},
+        // Both values mirror the stock firmware's own Security+ 2.0 generator,
+        // where the mask is commented "850LM pairing".
+        .serial_mask = 0x7FFFF3FC,
+        .counter_start = 0xE500000,
+        .freqs = {315000000, 310000000, 390000000},
         .freq_count = 3,
         .button = 0x68,
         .repeats = 2,
         .rolling = true,
+        .multiband = true,
         .steps = steps_chamberlain_sp2,
         .step_count = COUNT_OF(steps_chamberlain_sp2),
     },
@@ -193,6 +199,9 @@ static const GmBrand brands[] = {
         .keeloq_mfg = "DoorHan",
         .bits = 0,
         .te = 0,
+        // KeeLoq serials are 28-bit.
+        .serial_mask = 0x0FFFFFFF,
+        .counter_start = 0,
         .freqs = {433920000, 315000000, 868350000},
         .freq_count = 3,
         .button = 0x2,

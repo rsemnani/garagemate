@@ -125,8 +125,12 @@ static GmTxStatus gm_radio_send_transmitter(GmRadio* radio, SubGhzTransmitter* t
  * A fresh transmitter per press is deliberate: deserialising is what builds the
  * upload buffer, so reusing one would replay the previous press byte for byte.
  */
-static GmTxStatus
-    gm_radio_send_press(GmRadio* radio, const GmDoor* door, const GmBrand* brand, uint32_t counter) {
+static GmTxStatus gm_radio_send_press(
+    GmRadio* radio,
+    const GmDoor* door,
+    const GmBrand* brand,
+    uint32_t counter,
+    uint32_t frequency) {
     SubGhzTransmitter* transmitter = NULL;
     if(brand->protocol != NULL) {
         transmitter = subghz_transmitter_alloc_init(radio->environment, brand->protocol);
@@ -140,7 +144,7 @@ static GmTxStatus
     GmTxStatus status = GmTxErrPayload;
 
     do {
-        if(!gm_generator_build(transmitter, ff, door, brand, counter)) break;
+        if(!gm_generator_build(transmitter, ff, door, brand, counter, frequency)) break;
 
         // Generators leave the cursor at the end; the parser reads forwards.
         flipper_format_rewind(ff);
@@ -157,36 +161,69 @@ static GmTxStatus
     return status;
 }
 
+/**
+ * Collect the frequencies one press should go out on.
+ *
+ * Bands the current region forbids are dropped rather than failing the whole
+ * press, so a tri-band door still works on the two bands that are permitted.
+ *
+ * @return how many entries were written to @p out.
+ */
+static size_t gm_radio_band_plan(
+    const GmRadio* radio,
+    const GmDoor* door,
+    const GmBrand* brand,
+    uint32_t* out,
+    size_t out_max) {
+    size_t count = 0;
+
+    if(door->all_bands) {
+        for(uint8_t i = 0; i < brand->freq_count && count < out_max; i++) {
+            if(gm_radio_frequency_allowed(radio, brand->freqs[i])) out[count++] = brand->freqs[i];
+        }
+    } else if(gm_radio_frequency_allowed(radio, door->frequency)) {
+        out[count++] = door->frequency;
+    }
+
+    return count;
+}
+
 GmTxStatus gm_radio_press(GmRadio* radio, GmDoor* door, const GmBrand* brand, uint8_t presses) {
     furi_assert(radio);
     furi_assert(door);
     furi_assert(brand);
 
     if(!gm_generator_supports(brand)) return GmTxErrUnsupported;
-    if(!gm_radio_frequency_allowed(radio, door->frequency)) return GmTxErrFrequency;
     if(presses == 0) presses = 1;
 
-    if(!gm_radio_begin(radio, door->frequency)) {
-        gm_radio_end(radio);
-        return GmTxErrRadio;
-    }
+    uint32_t bands[GM_FREQ_MAX];
+    size_t band_count = gm_radio_band_plan(radio, door, brand, bands, COUNT_OF(bands));
+    if(band_count == 0) return GmTxErrFrequency;
 
     furi_hal_power_suppress_charge_enter();
 
     GmTxStatus status = GmTxOk;
     for(uint8_t i = 0; i < presses && status == GmTxOk; i++) {
-        // Rolling codes burn a counter value per press, exactly like a real
+        // Rolling codes burn one counter value per press, exactly like a real
         // remote; fixed codes ignore it and send the same number every time.
         uint32_t counter = door->counter;
         if(brand->rolling) counter = ++door->counter;
 
-        status = gm_radio_send_press(radio, door, brand, counter);
+        // A tri-band remote sends the *same* code on every band, so the counter
+        // is chosen once per press and reused across the loop below.
+        for(size_t band = 0; band < band_count && status == GmTxOk; band++) {
+            if(!gm_radio_begin(radio, bands[band])) {
+                status = GmTxErrRadio;
+            } else {
+                status = gm_radio_send_press(radio, door, brand, counter, bands[band]);
+            }
+            gm_radio_end(radio);
+        }
 
         if(i + 1 < presses) furi_delay_ms(GM_PRESS_GAP_MS);
     }
 
     furi_hal_power_suppress_charge_exit();
-    gm_radio_end(radio);
     return status;
 }
 
@@ -218,7 +255,7 @@ GmTxStatus gm_radio_export(
         // Export the next code the door will send, so the file stays usable in
         // the stock app without desynchronising this door's counter.
         uint32_t counter = brand->rolling ? door->counter + 1 : door->counter;
-        if(!gm_generator_build(transmitter, ff, door, brand, counter)) break;
+        if(!gm_generator_build(transmitter, ff, door, brand, counter, door->frequency)) break;
 
         status = GmTxOk;
     } while(false);

@@ -38,9 +38,12 @@ extern "C" {
  * @param transmitter Transmitter allocated for the brand's protocol. Required
  *                    for generated rolling codes; ignored for fixed codes.
  * @param ff          Empty FlipperFormat that receives the payload.
- * @param door        Door supplying serial and frequency.
+ * @param door        Door supplying the serial.
  * @param brand       Brand describing the protocol to emit.
  * @param counter     Rolling counter value to encode.
+ * @param frequency   Band this payload is for. Passed explicitly rather than
+ *                    read from @p door, because a multi-band door emits the
+ *                    same counter on several frequencies.
  * @return true when @p ff holds a valid payload.
  */
 bool gm_generator_build(
@@ -48,7 +51,8 @@ bool gm_generator_build(
     FlipperFormat* ff,
     const GmDoor* door,
     const GmBrand* brand,
-    uint32_t counter);
+    uint32_t counter,
+    uint32_t frequency);
 
 /** @return true when GarageMate can synthesise a remote for @p brand. */
 bool gm_generator_supports(const GmBrand* brand);

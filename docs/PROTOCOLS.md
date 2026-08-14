@@ -34,6 +34,43 @@ Fixed codes need no generator: the file is a header plus `Protocol`, `Bit`,
 waveform. GarageMate derives the key from the door's serial so a door always
 transmits the same number.
 
+### Security+ 2.0: the serial pattern is not optional
+
+A Security+ 2.0 remote's serial cannot be an arbitrary random number. The stock
+firmware's own generator masks it before use:
+
+```c
+key = (key & 0x7FFFF3FC); // 850LM pairing
+subghz_txrx_gen_secplus_v2_protocol(txrx, "AM650", 310000000, key, 0x68, 0xE500000);
+```
+
+That mask forces bits 31, 11, 10, 1 and 0 (`0x80000C03`) to zero, so the serial
+matches the shape of a real 850LM remote. Two things follow, and both were
+learned the hard way against a Chamberlain 050ACTWF:
+
+- **A non-conforming serial can pair and still never work.** The opener happily
+  stores the remote during LEARN — you hear the confirmation click — and then
+  ignores every later press. The failure is silent and looks exactly like a
+  range or frequency problem.
+- **The counter should not start at zero.** Stock begins at `0xE500000`, well
+  away from the bottom of the 28-bit range, as a real remote would.
+
+GarageMate carries both as `GmBrand::serial_mask` and `GmBrand::counter_start`,
+applied by `gm_door_apply_brand()`.
+
+### Tri-band receivers
+
+Security+ 2.0 receivers listen on **310, 315 and 390 MHz**, and a genuine remote
+transmits each press on all three. Sending on only one band is unreliable: it
+may be enough for LEARN and then intermittent or dead in normal use.
+
+A door with `AllBands` set transmits every press on all three. The important
+detail is that a press consumes **one** rolling counter value which is then
+reused across the bands — incrementing per band would burn three codes per
+press and drift out of sync with the receiver. Bands the region forbids are
+skipped rather than failing the press, so a locked-down Flipper still works on
+whatever bands it does permit.
+
 ### A trap worth documenting
 
 `SubGhzRadioPreset.name` must hold the **short** preset name (`AM650`). The

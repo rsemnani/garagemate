@@ -48,9 +48,7 @@ bool garagemate_scene_brand_on_event(void* context, SceneManagerEvent event) {
     }
 
     gm_door_init(&app->draft);
-    strlcpy(app->draft.brand_id, brand->id, sizeof(app->draft.brand_id));
-    app->draft.frequency = brand->freqs[0];
-    app->draft.button = brand->button;
+    gm_door_apply_brand(&app->draft, brand);
 
     scene_manager_next_scene(app->scene_manager, GmSceneFrequency);
     return true;

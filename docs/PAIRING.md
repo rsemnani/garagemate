@@ -17,8 +17,13 @@ remotes the opener trusts.
 button on the back of the motor unit is **yellow**. Often branded LiftMaster,
 Chamberlain, Craftsman, or sold with myQ.
 
-**Frequencies:** 315 MHz, 390 MHz, 310 MHz. These units usually listen on all
-three, so **start with 315 MHz** — 390 MHz is blocked on region-locked Flippers.
+**Frequencies:** pick **All bands**. These receivers listen on 310, 315 and
+390 MHz, and a real remote transmits on all three every press. A single band is
+often enough to get through LEARN and then unreliable afterwards — which looks
+like "it paired but the door does nothing".
+
+If the picker shows *All bands (2 of 3)*, your region is blocking 390 MHz; turn
+on **Settings → All frequencies** to get all three.
 
 1. **Find LEARN.** Get to the back of the motor unit on a ladder. You may need
    to pop off the light lens. The LEARN button is square and sits next to the

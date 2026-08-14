@@ -7,17 +7,11 @@ the Flipper and walks you through teaching your opener to accept it — the same
 thing you'd do with a spare remote from the hardware store. Once paired, each
 door shows up in a list and opens with one button.
 
-```
-┌──────────────────────┐     ┌──────────────────────┐
-│ Your doors           │     │ 2. Press LEARN (2/4) │
-│  Left bay            │     │──────────────────────│
-│  Right bay           │ ──▶ │ Press and release    │
-│  Side gate           │     │ LEARN once. Do not   │
-│  Add a door          │     │ hold it...           │
-│  Settings            │     │                      │
-└──────────────────────┘     │  Back   Send   Next  │
-                             └──────────────────────┘
-```
+![Adding a door in GarageMate: brand picker, frequency picker, the four pairing
+steps, and the finished door screen](docs/walkthrough.gif)
+
+<sub>Drawn from the app's screen definitions at the Flipper's native 128×64 and
+scaled up — see [`tools/make_demo_gif.py`](tools/make_demo_gif.py).</sub>
 
 ---
 
@@ -166,8 +160,10 @@ Either way it then appears on the Flipper under **Apps → Sub-GHz → GarageMat
 2. **Pick your opener.** The hint under each name ("yellow LEARN", "DIP
    switches") is usually enough to identify it. If unsure, look at the motor
    unit, not the remote.
-3. **Pick the frequency.** It is printed on the back of your existing remote.
-   Anything marked `(blocked)` is outside your Flipper's region — see above.
+3. **Pick the frequency.** For Chamberlain/LiftMaster choose **All bands** — the
+   receiver listens on 310, 315 and 390 MHz and a real remote uses all three.
+   For other brands it is printed on the back of your existing remote. Anything
+   marked `(blocked)` is outside your Flipper's region — see above.
 4. **Name it** — "Left bay", "Side gate".
 5. **Follow the pairing steps.** The app walks you through finding the LEARN
    button, pressing it, and transmitting. Step 3 has a **Send** button.
@@ -261,6 +257,7 @@ icons/                     10x10 app icon
 tools/make_icon.py         Regenerates the icon from readable pixel art
 tools/flipper_cli.py       Runs CLI commands and injects button presses,
                            for smoke-testing on real hardware
+tools/make_demo_gif.py     Renders the README walkthrough GIF
 src/
   garagemate.c             Entry point, wiring, shared helpers
   garagemate_i.h           Shared application state
@@ -301,6 +298,12 @@ Tested against a Flipper Zero on firmware 1.3.4 (API 86.0, target 7):
 - ✅ Exported `.sub` files match the stock format
 - ✅ Settings persist; Genie explanation path, help and wizard screens all
   navigate without crashing
+- ✅ Security+ 2.0 serials conform to the `0x7FFFF3FC` 850LM pattern and the
+  counter starts at `0xE500000`, both checked by reading the generated record
+  off the SD card
+- ✅ Tri-band — one OPEN advances the rolling counter by exactly the number of
+  presses, not by presses × bands, so a press sends one code across all three
+  frequencies rather than burning three
 - ✅ **All frequencies** — A/B tested on one 390 MHz door: refused with the
   setting off, transmitted with it on. The original region table is restored on
   exit (a later run with the setting off is blocked again), and six toggles left

@@ -71,6 +71,22 @@ typedef struct {
     /** Symbol period in microseconds for GmProtoFixed protocols that need it. */
     uint32_t te;
 
+    /**
+     * Bits a serial number is allowed to use.
+     *
+     * Not cosmetic: Security+ 2.0 openers only act on remotes whose serial
+     * follows the pattern a factory remote would have, so a random serial can
+     * be accepted during LEARN and then ignored afterwards.
+     */
+    uint32_t serial_mask;
+    /**
+     * First rolling counter value.
+     *
+     * Real remotes ship with a counter well away from zero, and the stock
+     * firmware's own generator starts Security+ 2.0 at 0xE500000.
+     */
+    uint32_t counter_start;
+
     /** Frequencies offered during setup; freqs[0] is the default. */
     uint32_t freqs[GM_FREQ_MAX];
     uint8_t freq_count;
@@ -81,6 +97,11 @@ typedef struct {
     uint8_t repeats;
     /** True when the code changes on every press. */
     bool rolling;
+    /**
+     * True when receivers of this brand listen across every frequency in
+     * @c freqs at once, so one press should go out on all of them.
+     */
+    bool multiband;
 
     const GmPairStep* steps;
     size_t step_count;
