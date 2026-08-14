@@ -74,20 +74,55 @@ static bool gm_generator_build_fixed(
     return ok;
 }
 
+/** Emit a rolling-code payload through the firmware's own generator. */
+static bool gm_generator_build_rolling(
+    SubGhzTransmitter* transmitter,
+    FlipperFormat* ff,
+    const GmDoor* door,
+    const GmBrand* brand,
+    uint32_t counter,
+    uint32_t frequency);
+
+/** Append the optional "Repeat" field understood by the protocol encoders. */
 bool gm_generator_build(
     SubGhzTransmitter* transmitter,
     FlipperFormat* ff,
     const GmDoor* door,
     const GmBrand* brand,
     uint32_t counter,
-    uint32_t frequency) {
+    uint32_t frequency,
+    uint8_t frame_repeat) {
     furi_assert(ff);
     furi_assert(door);
     furi_assert(brand);
 
+    bool ok_payload;
     if(brand->kind == GmProtoFixed) {
-        return gm_generator_build_fixed(ff, door, brand, frequency);
+        ok_payload = gm_generator_build_fixed(ff, door, brand, frequency);
+    } else {
+        ok_payload = gm_generator_build_rolling(transmitter, ff, door, brand, counter, frequency);
     }
+    if(!ok_payload) return false;
+
+    // Appended last so the protocol's own sequential parse of Protocol/Bit/Key
+    // has already happened by the time it looks for this optional field.
+    if(frame_repeat > 0) {
+        uint32_t repeat = frame_repeat;
+        if(!flipper_format_write_uint32(ff, "Repeat", &repeat, 1)) {
+            FURI_LOG_W(TAG, "Could not set frame repeat");
+        }
+    }
+
+    return true;
+}
+
+static bool gm_generator_build_rolling(
+    SubGhzTransmitter* transmitter,
+    FlipperFormat* ff,
+    const GmDoor* door,
+    const GmBrand* brand,
+    uint32_t counter,
+    uint32_t frequency) {
 
     if(transmitter == NULL) {
         FURI_LOG_E(TAG, "No transmitter for protocol %s", brand->protocol);

@@ -11,7 +11,7 @@
 
 void gm_settings_default(GmSettings* settings) {
     furi_assert(settings);
-    settings->repeats = GM_REPEATS_AUTO;
+    settings->frame_repeat = GM_FRAME_REPEAT_AUTO;
     settings->feedback = true;
     settings->hold_to_open = false;
     settings->unlock_frequencies = false;
@@ -33,14 +33,24 @@ void gm_settings_load(Storage* storage, GmSettings* settings) {
         if(furi_string_cmp_str(buffer, GM_SETTINGS_FILETYPE) != 0) break;
         if(version != GM_SETTINGS_VERSION) break;
 
-        // Every field is optional: a partially hand-edited file still loads,
-        // with anything missing left at its default.
-        uint32_t repeats = 0;
-        if(flipper_format_read_uint32(ff, "Repeats", &repeats, 1)) {
-            settings->repeats = (repeats > GM_REPEATS_MAX) ? GM_REPEATS_MAX : (uint8_t)repeats;
+        // Every field is optional, and each read rewinds first: FlipperFormat
+        // scans forward from the cursor, so without this a key that is missing
+        // or out of order would swallow every field after it.
+        uint32_t frame_repeat = 0;
+        flipper_format_rewind(ff);
+        if(flipper_format_read_uint32(ff, "FrameRepeat", &frame_repeat, 1)) {
+            settings->frame_repeat = (frame_repeat > GM_FRAME_REPEAT_MAX) ?
+                                         GM_FRAME_REPEAT_MAX :
+                                         (uint8_t)frame_repeat;
         }
+
+        flipper_format_rewind(ff);
         flipper_format_read_bool(ff, "Feedback", &settings->feedback, 1);
+
+        flipper_format_rewind(ff);
         flipper_format_read_bool(ff, "HoldToOpen", &settings->hold_to_open, 1);
+
+        flipper_format_rewind(ff);
         flipper_format_read_bool(ff, "UnlockFrequencies", &settings->unlock_frequencies, 1);
     } while(false);
 
@@ -59,8 +69,8 @@ bool gm_settings_save(Storage* storage, const GmSettings* settings) {
         if(!flipper_format_file_open_always(ff, GM_SETTINGS_PATH)) break;
         if(!flipper_format_write_header_cstr(ff, GM_SETTINGS_FILETYPE, GM_SETTINGS_VERSION)) break;
 
-        uint32_t repeats = settings->repeats;
-        if(!flipper_format_write_uint32(ff, "Repeats", &repeats, 1)) break;
+        uint32_t frame_repeat = settings->frame_repeat;
+        if(!flipper_format_write_uint32(ff, "FrameRepeat", &frame_repeat, 1)) break;
 
         bool feedback = settings->feedback;
         if(!flipper_format_write_bool(ff, "Feedback", &feedback, 1)) break;

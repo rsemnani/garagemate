@@ -44,6 +44,9 @@ extern "C" {
  * @param frequency   Band this payload is for. Passed explicitly rather than
  *                    read from @p door, because a multi-band door emits the
  *                    same counter on several frequencies.
+ * @param frame_repeat How many times the encoder repeats the frame, written as
+ *                    the payload's optional "Repeat" field. Zero leaves the
+ *                    protocol's own default in place.
  * @return true when @p ff holds a valid payload.
  */
 bool gm_generator_build(
@@ -52,7 +55,8 @@ bool gm_generator_build(
     const GmDoor* door,
     const GmBrand* brand,
     uint32_t counter,
-    uint32_t frequency);
+    uint32_t frequency,
+    uint8_t frame_repeat);
 
 /** @return true when GarageMate can synthesise a remote for @p brand. */
 bool gm_generator_supports(const GmBrand* brand);

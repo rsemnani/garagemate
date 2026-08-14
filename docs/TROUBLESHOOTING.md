@@ -86,6 +86,23 @@ All bands. The new remote gets a conforming serial, so it is a different remote
 as far as the opener is concerned and must be paired fresh. Clearing the old one
 out of the opener is optional — it will simply sit unused in its memory.
 
+## The door starts, then stops or reverses
+
+Something is sending two codes where one was meant. The opener reads each
+distinct rolling code as another press of the button, and the button toggles —
+so the first code starts the door and the second stops or reverses it.
+
+GarageMate sends exactly one code per OPEN, so if you see this:
+
+- Check **Settings → Signal length**. It should lengthen a single press, not
+  send extra codes; any value here is safe.
+- Make sure you are not also pressing a wall button or another remote.
+- If you are on a version before this behaviour was fixed, update — earlier
+  builds sent two codes per open.
+
+To make a marginal signal more reliable, raise **Signal length**. Never send a
+second press.
+
 ## It worked, then stopped
 
 Rolling-code openers track a counter and reject codes that look too old. If the

@@ -195,7 +195,7 @@ import — replay those in the stock app instead.
 
 | Setting | Meaning |
 | --- | --- |
-| `Repeats` | Button presses sent per open. `0` follows the brand's own default. |
+| `FrameRepeat` | How many times the frame repeats within one press. `0` follows the brand. Lengthens a single press; never sends a second code. |
 | `Feedback` | LED/vibro/beep when transmitting. |
 | `HoldToOpen` | Require a long press on OPEN. |
 | `UnlockFrequencies` | Widen the region table to the radio's full range. |
@@ -301,9 +301,11 @@ Tested against a Flipper Zero on firmware 1.3.4 (API 86.0, target 7):
 - ✅ Security+ 2.0 serials conform to the `0x7FFFF3FC` 850LM pattern and the
   counter starts at `0xE500000`, both checked by reading the generated record
   off the SD card
-- ✅ Tri-band — one OPEN advances the rolling counter by exactly the number of
-  presses, not by presses × bands, so a press sends one code across all three
-  frequencies rather than burning three
+- ✅ Tri-band — one OPEN advances the rolling counter by exactly 1, so a press
+  sends a single code across all three frequencies rather than burning three,
+  and never reads as two button presses to the opener
+- ✅ The generated payload carries `Repeat: 10` after `Secplus_packet_1`, where
+  the protocol's forward-reading parser will find it
 - ✅ **All frequencies** — A/B tested on one 390 MHz door: refused with the
   setting off, transmitted with it on. The original region table is restored on
   exit (a later run with the setting off is blocked again), and six toggles left

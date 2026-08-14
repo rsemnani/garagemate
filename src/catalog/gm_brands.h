@@ -93,8 +93,16 @@ typedef struct {
 
     /** Button/channel code baked into the generated remote. */
     uint8_t button;
-    /** How many times a single press repeats the burst. */
-    uint8_t repeats;
+    /**
+     * How many times the frame is repeated within one transmission.
+     *
+     * This is the only safe reliability knob. An opener treats each *distinct*
+     * rolling code as a separate button press and toggles direction on it, so
+     * sending two codes starts the door and then stops or reverses it.
+     * Repeating the same frame is what holding a real remote button does, and
+     * the receiver ignores the duplicates once it has acted on the first.
+     */
+    uint8_t frame_repeat;
     /** True when the code changes on every press. */
     bool rolling;
     /**

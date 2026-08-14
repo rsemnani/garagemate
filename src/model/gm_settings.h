@@ -12,16 +12,22 @@
 extern "C" {
 #endif
 
-/** Use the brand's own repeat count rather than a fixed override. */
-#define GM_REPEATS_AUTO 0
+/** Follow the brand's own frame repeat rather than a fixed override. */
+#define GM_FRAME_REPEAT_AUTO 0
 
-/** Largest repeat override offered in the settings menu. */
-#define GM_REPEATS_MAX 8
+/** Largest frame repeat offered in the settings menu. */
+#define GM_FRAME_REPEAT_MAX 30
 
 /** Application preferences. */
 typedef struct {
-    /** Burst repeats per press, or GM_REPEATS_AUTO to follow the brand. */
-    uint8_t repeats;
+    /**
+     * How many times the frame repeats within one transmission, or
+     * GM_FRAME_REPEAT_AUTO to follow the brand.
+     *
+     * This lengthens a single press; it never sends a second code, which would
+     * make the door reverse.
+     */
+    uint8_t frame_repeat;
     /** Play the LED/speaker/vibro feedback when transmitting. */
     bool feedback;
     /** Require a long press on OPEN, guarding against accidental opens. */

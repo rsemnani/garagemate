@@ -27,9 +27,10 @@ static GmTxStatus gm_open_transmit(GarageMate* app) {
     const GmBrand* brand = app->draft_brand;
     if(brand == NULL) return GmTxErrUnsupported;
 
-    uint8_t presses = (app->settings.repeats != GM_REPEATS_AUTO) ? app->settings.repeats :
-                                                                   brand->repeats;
-    GmTxStatus status = gm_radio_press(&app->radio, &app->draft, brand, presses);
+    uint8_t frame_repeat = (app->settings.frame_repeat != GM_FRAME_REPEAT_AUTO) ?
+                               app->settings.frame_repeat :
+                               brand->frame_repeat;
+    GmTxStatus status = gm_radio_press(&app->radio, &app->draft, brand, frame_repeat);
 
     // The counter advances even when a later press fails, so persist it
     // regardless: re-sending an already-used code would be rejected anyway.

@@ -31,7 +31,7 @@ on **Settings → All frequencies** to get all three.
 2. **Press and release LEARN.** The small LED next to it lights up. You have
    about 30 seconds.
 3. **Transmit.** Stand within a few feet of the motor unit and press **Send**.
-   GarageMate sends the code twice, the way a real remote does.
+   GarageMate sends the code once, on each of the three bands.
 4. **Confirm.** The opener's LED blinks off, or the lights flash once. That
    means the remote was stored.
 5. **Test.** Back out to the door screen and press OPEN.
@@ -116,6 +116,20 @@ Not supported. See [PROTOCOLS.md](PROTOCOLS.md#genie--intellicode) for why and
 what to do instead.
 
 ---
+
+## One press means one press
+
+An opener treats every *distinct* rolling code it accepts as a separate button
+press, and a garage door button toggles: open, stop, close. So two codes in a
+row start the door and then stop or reverse it.
+
+GarageMate therefore sends exactly **one** code per OPEN. Where the same code
+goes out on three bands, the receiver acts on whichever it hears first and
+discards the others as replays, so that still counts as a single press.
+
+If your opener sometimes misses a press, do **not** reach for a second code.
+Use **Settings → Signal length** instead, which repeats the same frame within
+one transmission — the equivalent of holding the button a moment longer.
 
 ## After pairing
 

@@ -43,13 +43,19 @@ void gm_radio_alloc(GmRadio* radio);
 void gm_radio_free(GmRadio* radio);
 
 /**
- * Send @p door's code @p presses times, as if pressing a real remote.
+ * Send @p door's code once, as one press of a real remote.
  *
- * For rolling-code brands each press consumes a counter value, and @p door's
- * counter is advanced in place. The caller is responsible for persisting the
- * door afterwards so the counter survives a reboot.
+ * Exactly one rolling code is emitted -- on every band for a multi-band door --
+ * because an opener toggles direction on each distinct code it accepts. Send
+ * two and the door starts, then stops or reverses. @p frame_repeat controls how
+ * many times the frame repeats inside that single transmission, which is the
+ * safe way to improve reception; zero keeps the protocol's own default.
+ *
+ * For rolling-code brands @p door's counter is advanced in place. The caller
+ * must persist the door afterwards so the counter survives a reboot.
  */
-GmTxStatus gm_radio_press(GmRadio* radio, GmDoor* door, const GmBrand* brand, uint8_t presses);
+GmTxStatus
+    gm_radio_press(GmRadio* radio, GmDoor* door, const GmBrand* brand, uint8_t frame_repeat);
 
 /** Write @p door's current payload to @p path as a stock-compatible .sub file. */
 GmTxStatus gm_radio_export(

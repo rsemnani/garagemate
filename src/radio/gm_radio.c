@@ -8,11 +8,14 @@
 
 #define TAG "GarageMate"
 
-/** Give up on a stuck transmission rather than blocking the UI forever. */
-#define GM_TX_TIMEOUT_MS 3000
+/**
+ * Give up on a stuck transmission rather than blocking the UI forever.
+ *
+ * Generous because a high frame repeat legitimately takes a while: the frame is
+ * sent end to end for every repetition before the radio reports completion.
+ */
+#define GM_TX_TIMEOUT_MS 8000
 
-/** Gap between presses, roughly matching how fast a thumb can double-tap. */
-#define GM_PRESS_GAP_MS 250
 
 void gm_radio_alloc(GmRadio* radio) {
     furi_assert(radio);
@@ -130,7 +133,8 @@ static GmTxStatus gm_radio_send_press(
     const GmDoor* door,
     const GmBrand* brand,
     uint32_t counter,
-    uint32_t frequency) {
+    uint32_t frequency,
+    uint8_t frame_repeat) {
     SubGhzTransmitter* transmitter = NULL;
     if(brand->protocol != NULL) {
         transmitter = subghz_transmitter_alloc_init(radio->environment, brand->protocol);
@@ -144,7 +148,8 @@ static GmTxStatus gm_radio_send_press(
     GmTxStatus status = GmTxErrPayload;
 
     do {
-        if(!gm_generator_build(transmitter, ff, door, brand, counter, frequency)) break;
+        if(!gm_generator_build(transmitter, ff, door, brand, counter, frequency, frame_repeat))
+            break;
 
         // Generators leave the cursor at the end; the parser reads forwards.
         flipper_format_rewind(ff);
@@ -188,39 +193,38 @@ static size_t gm_radio_band_plan(
     return count;
 }
 
-GmTxStatus gm_radio_press(GmRadio* radio, GmDoor* door, const GmBrand* brand, uint8_t presses) {
+GmTxStatus
+    gm_radio_press(GmRadio* radio, GmDoor* door, const GmBrand* brand, uint8_t frame_repeat) {
     furi_assert(radio);
     furi_assert(door);
     furi_assert(brand);
 
     if(!gm_generator_supports(brand)) return GmTxErrUnsupported;
-    if(presses == 0) presses = 1;
 
     uint32_t bands[GM_FREQ_MAX];
     size_t band_count = gm_radio_band_plan(radio, door, brand, bands, COUNT_OF(bands));
     if(band_count == 0) return GmTxErrFrequency;
 
+    // Exactly one code per call. An opener toggles direction on every distinct
+    // rolling code it accepts, so a second code would stop or reverse a door
+    // that the first one just started moving. Reliability comes from repeating
+    // the frame within the transmission, not from sending another code.
+    uint32_t counter = door->counter;
+    if(brand->rolling) counter = ++door->counter;
+
     furi_hal_power_suppress_charge_enter();
 
     GmTxStatus status = GmTxOk;
-    for(uint8_t i = 0; i < presses && status == GmTxOk; i++) {
-        // Rolling codes burn one counter value per press, exactly like a real
-        // remote; fixed codes ignore it and send the same number every time.
-        uint32_t counter = door->counter;
-        if(brand->rolling) counter = ++door->counter;
-
-        // A tri-band remote sends the *same* code on every band, so the counter
-        // is chosen once per press and reused across the loop below.
-        for(size_t band = 0; band < band_count && status == GmTxOk; band++) {
-            if(!gm_radio_begin(radio, bands[band])) {
-                status = GmTxErrRadio;
-            } else {
-                status = gm_radio_send_press(radio, door, brand, counter, bands[band]);
-            }
-            gm_radio_end(radio);
+    // The same code goes out on every band, which is what a tri-band remote
+    // does; the receiver acts on whichever it hears first and discards the
+    // rest as replays.
+    for(size_t band = 0; band < band_count && status == GmTxOk; band++) {
+        if(!gm_radio_begin(radio, bands[band])) {
+            status = GmTxErrRadio;
+        } else {
+            status = gm_radio_send_press(radio, door, brand, counter, bands[band], frame_repeat);
         }
-
-        if(i + 1 < presses) furi_delay_ms(GM_PRESS_GAP_MS);
+        gm_radio_end(radio);
     }
 
     furi_hal_power_suppress_charge_exit();
@@ -255,7 +259,9 @@ GmTxStatus gm_radio_export(
         // Export the next code the door will send, so the file stays usable in
         // the stock app without desynchronising this door's counter.
         uint32_t counter = brand->rolling ? door->counter + 1 : door->counter;
-        if(!gm_generator_build(transmitter, ff, door, brand, counter, door->frequency)) break;
+        if(!gm_generator_build(
+               transmitter, ff, door, brand, counter, door->frequency, brand->frame_repeat))
+            break;
 
         status = GmTxOk;
     } while(false);

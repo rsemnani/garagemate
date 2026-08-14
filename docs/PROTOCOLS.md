@@ -71,6 +71,27 @@ press and drift out of sync with the receiver. Bands the region forbids are
 skipped rather than failing the press, so a locked-down Flipper still works on
 whatever bands it does permit.
 
+### One open, one code
+
+An opener treats each distinct rolling code it accepts as a button press, and
+the button toggles direction. Two codes therefore start the door and then stop
+or reverse it — which is what happens if you model "repeat for reliability" as
+"send it again".
+
+So `gm_radio_press()` emits exactly one code. Reliability instead comes from the
+optional `Repeat` field in the payload, which the protocol encoders read to
+decide how many times to repeat the frame within a single transmission:
+
+```c
+//optional parameter parameter
+flipper_format_read_uint32(flipper_format, "Repeat", (uint32_t*)&instance->encoder.repeat, 1);
+```
+
+It is appended after `Key`/`Secplus_packet_1` because the parser reads forwards,
+and it is the equivalent of holding a real remote's button a moment longer. The
+same code going out on three bands is still one press: the receiver acts on the
+first and rejects the rest as replays.
+
 ### A trap worth documenting
 
 `SubGhzRadioPreset.name` must hold the **short** preset name (`AM650`). The
