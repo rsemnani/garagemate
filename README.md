@@ -67,26 +67,45 @@ See [docs/PROTOCOLS.md](docs/PROTOCOLS.md) for the full reasoning.
 
 ---
 
-## ⚠️ Read this first: 390 MHz is blocked on this Flipper
+## Frequencies: turn on "All frequencies"
 
-This Flipper is region-provisioned as **US**, and its region table allows
-roughly 304–322 MHz, 433.05–434.79 MHz and 915–928 MHz. **390 MHz is not in
-that list**, and many Chamberlain/LiftMaster openers use 390 MHz — including the
+Out of the box this Flipper is region-provisioned **US**, which permits roughly
+304–322 MHz, 433.05–434.79 MHz and 915–928 MHz. **390 MHz is not in that list**
+— and plenty of Chamberlain and LiftMaster openers use 390 MHz, including the
 `Sk_upper.sub` already on your SD card.
 
-Verified on the device: transmitting at 315 MHz and 433.92 MHz succeeds, and at
-390 MHz the radio is refused.
+**Settings → All frequencies → ON** fixes that. It widens the region table to
+everything the CC1101 can physically tune (300–348, 387–464, 779–928 MHz), so
+390 MHz — along with 310, 318 and 868 MHz — becomes usable.
 
-What to do about it:
+Measured on the hardware, same 390 MHz door either way:
 
-- **Try 315 MHz first.** Most Security+ 2.0 receivers listen on 310, 315 *and*
-  390 MHz, so pairing at 315 MHz usually works even on a "390 MHz" opener. This
-  is the fix that requires nothing else.
-- GarageMate marks unusable frequencies as `(blocked)` in the frequency picker,
-  so you find out during setup rather than on a ladder.
-- If you genuinely need 390 MHz, that requires changing your Flipper's region
-  enforcement (a firmware/region-data change). This repo does not do that for
-  you — see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+| All frequencies | Result |
+| --- | --- |
+| OFF | refused — counter never advanced |
+| ON | transmitted — counter advanced 0 → 2 |
+
+How it works, and why it needs no custom firmware: the firmware decides whether
+it may transmit purely by walking a band table
+(`furi_hal_subghz_set_frequency()` drops the radio to receive-only when
+`furi_hal_region_is_frequency_allowed()` says no), and `furi_hal_region_set()`
+is exported to applications. GarageMate swaps in a wider table.
+
+- The change is **RAM-only**. It is never written to flash, GarageMate puts the
+  original table back when it exits, and a reboot would clear it regardless.
+- It applies **only while GarageMate is running**. The stock Sub-GHz app is
+  unaffected — import a signal into GarageMate if you want to send it at 390 MHz.
+- For a device-wide unlock you need custom firmware; see
+  [docs/PROTOCOLS.md](docs/PROTOCOLS.md#unlocking-frequencies).
+
+390 MHz garage openers are legal to operate in the US — that is the band the
+openers themselves are licensed under (FCC Part 15.231). The Flipper's stock
+region table is simply more conservative than the rules require. Keep to
+equipment you own.
+
+> Still worth trying 315 MHz first: Security+ 2.0 receivers generally listen on
+> 310, 315 *and* 390 MHz, so a 315 MHz pairing often works on a "390 MHz"
+> opener.
 
 ---
 
@@ -170,6 +189,7 @@ import — replay those in the stock app instead.
 | `Repeats` | Button presses sent per open. `0` follows the brand's own default. |
 | `Feedback` | LED/vibro/beep when transmitting. |
 | `HoldToOpen` | Require a long press on OPEN. |
+| `UnlockFrequencies` | Widen the region table to the radio's full range. |
 
 ### Doors
 
@@ -266,7 +286,10 @@ Tested against a Flipper Zero on firmware 1.3.4 (API 86.0, target 7):
 - ✅ Exported `.sub` files match the stock format
 - ✅ Settings persist; Genie explanation path, help and wizard screens all
   navigate without crashing
-- ❌ 390 MHz refused by the device's region (see above)
+- ✅ **All frequencies** — A/B tested on one 390 MHz door: refused with the
+  setting off, transmitted with it on. The original region table is restored on
+  exit (a later run with the setting off is blocked again), and six toggles left
+  the heap where it started
 
 **Not verified:** pairing against a real opener. That needs the physical motor
 unit and its LEARN button, so the last step is yours. Security+ 1.0 generation

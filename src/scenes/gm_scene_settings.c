@@ -40,6 +40,18 @@ static void gm_settings_hold_changed(VariableItem* item) {
     variable_item_set_current_value_text(item, gm_toggle_labels[index]);
 }
 
+static void gm_settings_unlock_changed(VariableItem* item) {
+    GarageMate* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+
+    app->settings.unlock_frequencies = (index == 1);
+    variable_item_set_current_value_text(item, gm_toggle_labels[index]);
+
+    // Apply straight away rather than on exit: the frequency picker asks the
+    // radio what is permitted, so the change must be live before it is opened.
+    garagemate_apply_region(app);
+}
+
 void garagemate_scene_settings_on_enter(void* context) {
     GarageMate* app = context;
     VariableItemList* list = app->var_item_list;
@@ -59,6 +71,11 @@ void garagemate_scene_settings_on_enter(void* context) {
     variable_item_set_current_value_index(item, app->settings.hold_to_open ? 1 : 0);
     variable_item_set_current_value_text(
         item, gm_toggle_labels[app->settings.hold_to_open ? 1 : 0]);
+
+    item = variable_item_list_add(list, "All frequencies", 2, gm_settings_unlock_changed, app);
+    variable_item_set_current_value_index(item, app->settings.unlock_frequencies ? 1 : 0);
+    variable_item_set_current_value_text(
+        item, gm_toggle_labels[app->settings.unlock_frequencies ? 1 : 0]);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, GmViewVarItemList);
 }

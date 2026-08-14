@@ -14,6 +14,7 @@ void gm_settings_default(GmSettings* settings) {
     settings->repeats = GM_REPEATS_AUTO;
     settings->feedback = true;
     settings->hold_to_open = false;
+    settings->unlock_frequencies = false;
 }
 
 void gm_settings_load(Storage* storage, GmSettings* settings) {
@@ -40,6 +41,7 @@ void gm_settings_load(Storage* storage, GmSettings* settings) {
         }
         flipper_format_read_bool(ff, "Feedback", &settings->feedback, 1);
         flipper_format_read_bool(ff, "HoldToOpen", &settings->hold_to_open, 1);
+        flipper_format_read_bool(ff, "UnlockFrequencies", &settings->unlock_frequencies, 1);
     } while(false);
 
     furi_string_free(buffer);
@@ -65,6 +67,9 @@ bool gm_settings_save(Storage* storage, const GmSettings* settings) {
 
         bool hold = settings->hold_to_open;
         if(!flipper_format_write_bool(ff, "HoldToOpen", &hold, 1)) break;
+
+        bool unlock = settings->unlock_frequencies;
+        if(!flipper_format_write_bool(ff, "UnlockFrequencies", &unlock, 1)) break;
 
         ok = true;
     } while(false);

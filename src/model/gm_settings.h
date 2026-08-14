@@ -26,6 +26,12 @@ typedef struct {
     bool feedback;
     /** Require a long press on OPEN, guarding against accidental opens. */
     bool hold_to_open;
+    /**
+     * Widen the Sub-GHz region table to the CC1101's full range while the app
+     * runs, so bands the provisioned region omits (notably 390 MHz) can be
+     * transmitted on. See radio/gm_region.h.
+     */
+    bool unlock_frequencies;
 } GmSettings;
 
 /** Populate @p settings with defaults. */

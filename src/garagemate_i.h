@@ -15,6 +15,7 @@
 #include "model/gm_settings.h"
 #include "radio/gm_generator.h"
 #include "radio/gm_radio.h"
+#include "radio/gm_region.h"
 #include "scenes/gm_scene.h"
 
 #include <dialogs/dialogs.h>
@@ -72,6 +73,7 @@ typedef struct {
     VariableItemList* var_item_list;
 
     GmRadio radio;
+    GmRegionGuard region_guard;
     GmSettings settings;
     GmDoorList doors;
 
@@ -101,3 +103,6 @@ bool garagemate_save_door(GarageMate* app, const GmDoor* door);
 
 /** Play the configured success or failure feedback. */
 void garagemate_notify(GarageMate* app, bool success);
+
+/** Apply GmSettings::unlock_frequencies to the live region table. */
+void garagemate_apply_region(GarageMate* app);

@@ -27,15 +27,18 @@ release SDK instead, which will not load on older firmware.
 Your Flipper's region data forbids it. On a US-provisioned device that includes
 **390 MHz**, which several Chamberlain and LiftMaster openers use.
 
-**Try 315 MHz first.** Security+ 2.0 receivers generally listen on 310, 315 and
-390 MHz at once, so a 315 MHz pairing usually works on a "390 MHz" opener. This
-is the fix that requires changing nothing.
+**Turn on Settings → All frequencies.** That widens the region table to
+everything the radio supports (300–348, 387–464, 779–928 MHz), which covers
+390 MHz. It applies only while GarageMate is running, is never written to flash,
+and is undone when you exit. Details:
+[PROTOCOLS.md](PROTOCOLS.md#unlocking-frequencies).
 
-If you truly need 390 MHz, region enforcement comes from `/int/.region_data` in
-the Flipper's internal storage, and getting around it means changing your
-device's region provisioning or running a firmware fork that does not enforce
-it. That is a decision about your own hardware and your local radio rules;
-this repo deliberately does not do it for you.
+Also worth trying: **315 MHz**. Security+ 2.0 receivers generally listen on 310,
+315 and 390 MHz at once, so a 315 MHz pairing often works on a "390 MHz" opener.
+
+For a device-wide unlock that also covers the stock Sub-GHz app, you need custom
+firmware — Momentum, Unleashed or RogueMaster, listed in
+[PROTOCOLS.md](PROTOCOLS.md#if-you-want-it-device-wide).
 
 ---
 

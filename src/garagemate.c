@@ -28,6 +28,15 @@ void garagemate_notify(GarageMate* app, bool success) {
         app->notifications, success ? &sequence_success : &sequence_error);
 }
 
+void garagemate_apply_region(GarageMate* app) {
+    furi_assert(app);
+    if(app->settings.unlock_frequencies) {
+        gm_region_unlock(&app->region_guard);
+    } else {
+        gm_region_restore(&app->region_guard);
+    }
+}
+
 static bool garagemate_custom_event_callback(void* context, uint32_t event) {
     furi_assert(context);
     GarageMate* app = context;
@@ -80,12 +89,18 @@ static GarageMate* garagemate_alloc(void) {
     gm_store_load_all(app->storage, &app->doors);
     gm_radio_alloc(&app->radio);
 
+    gm_region_guard_init(&app->region_guard);
+    garagemate_apply_region(app);
+
     return app;
 }
 
 static void garagemate_free(GarageMate* app) {
     furi_assert(app);
 
+    // Leave the radio exactly as we found it, so nothing else on the Flipper
+    // inherits a widened region table.
+    gm_region_restore(&app->region_guard);
     gm_radio_free(&app->radio);
 
     view_dispatcher_remove_view(app->view_dispatcher, GmViewSubmenu);

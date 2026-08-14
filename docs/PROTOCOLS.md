@@ -129,6 +129,82 @@ as a mystery failure at the opener.
 
 ---
 
+## Unlocking frequencies
+
+**Settings → All frequencies → ON.** No custom firmware required.
+
+### Why it works
+
+Region enforcement in the official firmware is one table lookup and nothing
+else. In `targets/f7/furi_hal/furi_hal_subghz.c`:
+
+```c
+// furi_hal_subghz_set_frequency()
+if(furi_hal_region_is_frequency_allowed(value)) {
+    furi_hal_subghz.regulation = SubGhzRegulationTxRx;
+} else {
+    furi_hal_subghz.regulation = SubGhzRegulationOnlyRx;   // TX silently dropped
+}
+```
+
+and both `furi_hal_subghz_set_tx()` and the async TX path refuse when
+`regulation != SubGhzRegulationTxRx`. `furi_hal_region_is_frequency_allowed()`
+in turn just walks `region->bands[]`.
+
+That table is swappable at runtime, and the setter is **exported to
+applications**:
+
+```
+Function,+,furi_hal_region_set,void,FuriHalRegion*
+```
+
+The firmware even ships an unlocked table of its own — `furi_hal_region_zero`,
+country code `"00"`, spanning 0–1000 MHz — for developer-edition units.
+
+GarageMate installs a table covering the CC1101's real tuning ranges
+(300–348, 387–464, 779–928 MHz). That is narrower than `region_zero` on purpose:
+there is nothing to gain from advertising frequencies the radio cannot reach.
+
+### Ownership trap
+
+`furi_hal_region_set()` **frees the table it replaces**:
+
+```c
+if(furi_hal_dynamic_region) free(furi_hal_dynamic_region);
+furi_hal_dynamic_region = region;
+```
+
+So saving the original pointer and handing it back later would be a
+use-after-free. `gm_region_unlock()` keeps a heap *copy* of the original and
+hands that copy back on exit, at which point the HAL frees ours. Each table is
+owned by exactly one party at a time. See
+[`src/radio/gm_region.c`](../src/radio/gm_region.c).
+
+### Scope and reversibility
+
+- RAM only — never written to flash.
+- Restored when GarageMate exits, and cleared by a reboot regardless.
+- Applies only to GarageMate. The stock Sub-GHz app still sees the original
+  region, so import a signal into GarageMate to send it on a widened band.
+
+### If you want it device-wide
+
+That needs custom firmware. All three of these are open source and remove or
+bypass region locking:
+
+| Firmware | Notes |
+| --- | --- |
+| [Momentum](https://github.com/Next-Flip/Momentum-Firmware) | Continuation of Xtreme, includes most Unleashed features. `MNTM → Protocols → Sub-GHz Bypass Region Lock`, plus `Extend Freq Bands` for 281–361 / 378–481 / 749–962 MHz |
+| [Unleashed](https://github.com/DarkFlippers/unleashed-firmware) | Long-running region-free fork |
+| [RogueMaster](https://github.com/RogueMaster/flipperzero-firmware-wPlugins) | Unleashed plus a large pile of extras |
+
+Note that the "extended bands" those forks offer go **beyond** what the CC1101
+is specified for, which is why they carry hardware-risk warnings. Garage doors
+need nothing outside the normal ranges, so the in-app unlock covers this use
+case without going there.
+
+---
+
 ## RAW captures
 
 `.sub` files with `Protocol: RAW` are recorded sample streams, not protocol
