@@ -60,6 +60,14 @@ static bool gm_store_read_one(Storage* storage, const char* path, GmDoor* door) 
             strlcpy(door->sub_path, furi_string_get_cstr(buffer), sizeof(door->sub_path));
         }
 
+        // Optional, so records written before icons still load (defaulting to
+        // garage, since the field is left zero by the memset above). Rewind
+        // first: the optional SubFile read above may have left the cursor mid
+        // file, and Icon can appear before or after it.
+        flipper_format_rewind(ff);
+        uint32_t icon = 0;
+        if(flipper_format_read_uint32(ff, "Icon", &icon, 1)) door->icon = (uint8_t)icon;
+
         ok = true;
     } while(false);
 
@@ -141,6 +149,9 @@ bool gm_store_save(Storage* storage, const GmDoor* door) {
         if(!managed && door->sub_path[0] != '\0') {
             if(!flipper_format_write_string_cstr(ff, "SubFile", door->sub_path)) break;
         }
+
+        uint32_t icon = door->icon;
+        if(!flipper_format_write_uint32(ff, "Icon", &icon, 1)) break;
 
         ok = true;
     } while(false);

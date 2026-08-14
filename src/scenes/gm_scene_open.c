@@ -27,6 +27,25 @@ static GmTxStatus gm_open_transmit(GarageMate* app) {
     const GmBrand* brand = app->draft_brand;
     if(brand == NULL) return GmTxErrUnsupported;
 
+    if(brand->kind == GmProtoGenie) {
+        // Genie doors replay a learned code, then advance. There is nothing to
+        // generate, so this path is entirely separate from gm_radio_press.
+        gm_genie_seq_load(app->storage, app->draft.id, &app->genie_seq);
+
+        uint64_t code = 0;
+        if(!gm_genie_seq_peek(&app->genie_seq, &code)) return GmTxErrNoCodes;
+
+        uint32_t frequency = app->genie_seq.frequency ? app->genie_seq.frequency :
+                                                        app->draft.frequency;
+        GmTxStatus status = gm_radio_genie_send(&app->radio, code, frequency);
+
+        if(status == GmTxOk) {
+            gm_genie_seq_advance(&app->genie_seq);
+            gm_genie_seq_save(app->storage, app->draft.id, &app->genie_seq);
+        }
+        return status;
+    }
+
     uint8_t frame_repeat = (app->settings.frame_repeat != GM_FRAME_REPEAT_AUTO) ?
                                app->settings.frame_repeat :
                                brand->frame_repeat;

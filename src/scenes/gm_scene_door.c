@@ -61,7 +61,11 @@ void garagemate_scene_door_on_enter(void* context) {
     }
     widget_add_string_element(widget, 0, 26, AlignLeft, AlignTop, FontSecondary, detail);
 
-    if(app->draft.managed && app->draft_brand != NULL && app->draft_brand->rolling) {
+    if(app->draft_brand != NULL && app->draft_brand->kind == GmProtoGenie) {
+        GmGenieSeq seq;
+        gm_genie_seq_load(app->storage, app->draft.id, &seq);
+        snprintf(detail, sizeof(detail), "Learned codes left: %u", gm_genie_seq_remaining(&seq));
+    } else if(app->draft.managed && app->draft_brand != NULL && app->draft_brand->rolling) {
         snprintf(detail, sizeof(detail), "Rolling code, sent %lu", (unsigned long)app->draft.counter);
     } else if(app->draft.managed) {
         snprintf(detail, sizeof(detail), "Fixed code");

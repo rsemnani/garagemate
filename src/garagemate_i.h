@@ -11,12 +11,15 @@
 #include "catalog/gm_brands.h"
 #include "model/gm_door.h"
 #include "model/gm_door_store.h"
+#include "model/gm_genie_seq.h"
 #include "model/gm_paths.h"
 #include "model/gm_settings.h"
+#include "radio/gm_capture.h"
 #include "radio/gm_generator.h"
 #include "radio/gm_radio.h"
 #include "radio/gm_region.h"
 #include "scenes/gm_scene.h"
+#include "views/gm_doorlist.h"
 
 #include <dialogs/dialogs.h>
 #include <furi.h>
@@ -40,6 +43,7 @@ typedef enum {
     GmViewPopup,
     GmViewTextInput,
     GmViewVarItemList,
+    GmViewDoorList,
 } GmViewId;
 
 /**
@@ -55,6 +59,7 @@ typedef enum {
     GmCustomEventPairSend,
     GmCustomEventNameDone,
     GmCustomEventPopupDone,
+    GmCustomEventCaptureTick,
 } GmCustomEvent;
 
 /** Application state. */
@@ -71,6 +76,7 @@ typedef struct {
     Popup* popup;
     TextInput* text_input;
     VariableItemList* var_item_list;
+    GmDoorListView* door_list;
 
     GmRadio radio;
     GmRegionGuard region_guard;
@@ -88,6 +94,13 @@ typedef struct {
     size_t door_index;
     /** Position within the current brand's walkthrough. */
     size_t pair_step;
+
+    /** Captured Genie codes for the door being learned or opened. */
+    GmGenieSeq genie_seq;
+    /** Active over-the-air capture, non-NULL only on the capture screen. */
+    GmCapture* capture;
+    /** Refreshes the capture screen's live count. */
+    FuriTimer* capture_timer;
 
     /** Scratch buffer backing the name text input. */
     char name_buf[GM_NAME_MAX];

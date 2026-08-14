@@ -72,6 +72,7 @@ static GarageMate* garagemate_alloc(void) {
     app->popup = popup_alloc();
     app->text_input = text_input_alloc();
     app->var_item_list = variable_item_list_alloc();
+    app->door_list = gm_doorlist_alloc();
 
     view_dispatcher_add_view(
         app->view_dispatcher, GmViewSubmenu, submenu_get_view(app->submenu));
@@ -83,6 +84,8 @@ static GarageMate* garagemate_alloc(void) {
         app->view_dispatcher,
         GmViewVarItemList,
         variable_item_list_get_view(app->var_item_list));
+    view_dispatcher_add_view(
+        app->view_dispatcher, GmViewDoorList, gm_doorlist_get_view(app->door_list));
 
     gm_store_init(app->storage);
     gm_settings_load(app->storage, &app->settings);
@@ -108,12 +111,14 @@ static void garagemate_free(GarageMate* app) {
     view_dispatcher_remove_view(app->view_dispatcher, GmViewPopup);
     view_dispatcher_remove_view(app->view_dispatcher, GmViewTextInput);
     view_dispatcher_remove_view(app->view_dispatcher, GmViewVarItemList);
+    view_dispatcher_remove_view(app->view_dispatcher, GmViewDoorList);
 
     submenu_free(app->submenu);
     widget_free(app->widget);
     popup_free(app->popup);
     text_input_free(app->text_input);
     variable_item_list_free(app->var_item_list);
+    gm_doorlist_free(app->door_list);
 
     scene_manager_free(app->scene_manager);
     view_dispatcher_free(app->view_dispatcher);

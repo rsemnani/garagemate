@@ -104,7 +104,13 @@ bool garagemate_scene_pair_on_event(void* context, SceneManagerEvent event) {
         return true;
 
     case GmCustomEventPairSend:
-        scene_manager_next_scene(app->scene_manager, GmSceneOpen);
+        // Genie has nothing to transmit yet -- its "Send" step means "go learn
+        // codes from the remote" rather than "fire a generated code".
+        if(brand->kind == GmProtoGenie) {
+            scene_manager_next_scene(app->scene_manager, GmSceneCapture);
+        } else {
+            scene_manager_next_scene(app->scene_manager, GmSceneOpen);
+        }
         return true;
 
     default:

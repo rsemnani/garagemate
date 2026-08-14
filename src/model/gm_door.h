@@ -56,6 +56,8 @@ typedef struct {
     bool all_bands;
     /** Source .sub file for imported doors; empty for managed ones. */
     char sub_path[GM_PATH_MAX];
+    /** List icon (GmIconId): garage door by default. */
+    uint8_t icon;
 } GmDoor;
 
 /** An in-memory list of doors, loaded at startup. */

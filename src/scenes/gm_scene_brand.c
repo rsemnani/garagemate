@@ -39,9 +39,9 @@ bool garagemate_scene_brand_on_event(void* context, SceneManagerEvent event) {
     app->draft_brand = brand;
     app->pair_step = 0;
 
-    if(!gm_generator_supports(brand)) {
-        // Nothing to generate, so skip straight to the explanation instead of
-        // walking the user through setting up a door that cannot transmit.
+    if(brand->kind == GmProtoManual) {
+        // Nothing to generate or capture, so skip straight to the explanation
+        // instead of walking the user through a door that cannot transmit.
         app->draft_is_new = false;
         scene_manager_next_scene(app->scene_manager, GmScenePair);
         return true;

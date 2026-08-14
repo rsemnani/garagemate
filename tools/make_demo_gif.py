@@ -86,6 +86,45 @@ def draw_menu(draw, items: list, selected: int) -> None:
             draw.text((5, top + 1), label, font=FONT_SECONDARY, fill=INK)
 
 
+def _icon(draw, kind: str, x: int, y: int, color) -> None:
+    """The per-door icons, matching src/model/gm_icon.c on a 13x13 box."""
+    if kind == "garage":
+        draw.line((x, y + 4, x + 6, y), fill=color)
+        draw.line((x + 6, y, x + 12, y + 4), fill=color)
+        draw.line((x, y + 4, x, y + 12), fill=color)
+        draw.line((x + 12, y + 4, x + 12, y + 12), fill=color)
+        draw.line((x, y + 12, x + 12, y + 12), fill=color)
+        draw.rectangle((x + 2, y + 6, x + 10, y + 12), outline=color)
+        draw.line((x + 2, y + 8, x + 10, y + 8), fill=color)
+        draw.line((x + 2, y + 10, x + 10, y + 10), fill=color)
+    elif kind == "gate":
+        draw.line((x, y + 1, x, y + 12), fill=color)
+        draw.line((x + 12, y + 1, x + 12, y + 12), fill=color)
+        draw.rectangle((x + 2, y + 3, x + 10, y + 11), outline=color)
+        draw.line((x + 2, y + 7, x + 10, y + 7), fill=color)
+        draw.line((x + 2, y + 10, x + 10, y + 3), fill=color)
+    elif kind == "light":
+        draw.ellipse((x + 2, y + 1, x + 10, y + 9), outline=color)
+        draw.line((x + 4, y + 9, x + 8, y + 9), fill=color)
+        draw.line((x + 4, y + 11, x + 8, y + 11), fill=color)
+
+
+def draw_door_list(draw, rows: list, selected: int) -> None:
+    """The home screen's custom list: an icon beside each door, 16px rows."""
+    for index, (label, icon) in enumerate(rows):
+        top = index * 16
+        if top + 16 > HEIGHT:
+            break
+        fg, bg = (BACKGROUND, INK) if index == selected else (INK, None)
+        if bg is not None:
+            draw.rectangle((0, top, WIDTH - 1, top + 15), fill=bg)
+        text_x = 4
+        if icon:
+            _icon(draw, icon, 3, top + 2, fg)
+            text_x = 20
+        draw.text((text_x, top + 4), label, font=FONT_SECONDARY, fill=fg)
+
+
 def draw_buttons(draw, left=None, center=None, right=None) -> None:
     top = HEIGHT - 11
     if left:
@@ -107,6 +146,12 @@ def frame_menu(title: str, items: list, selected: int):
     image, draw = new_frame()
     draw_header(draw, title)
     draw_menu(draw, items, selected)
+    return image
+
+
+def frame_door_list(rows: list, selected: int):
+    image, draw = new_frame()
+    draw_door_list(draw, rows, selected)
     return image
 
 
@@ -140,7 +185,9 @@ def frame_door(name: str, brand: str, bands: str, state: str):
 def build_frames() -> list:
     """(image, duration_ms) pairs telling the add-a-door story."""
     return [
-        (frame_menu("Your doors", ["Left bay", "Side gate", "Add a door", "Settings"], 2), 1500),
+        (frame_door_list(
+             [("Left bay", "garage"), ("Side gate", "gate"),
+              ("Shop light", "light"), ("Add a door", None)], 0), 1800),
         (frame_menu("Pick your opener",
                     ["Chamberlain / LiftMaster", "Chamberlain (older)",
                      "Chamberlain (vintage)", "Genie / Overhead Door"], 0), 1800),

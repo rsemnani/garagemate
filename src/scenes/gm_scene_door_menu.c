@@ -6,6 +6,8 @@
 
 typedef enum {
     GmDoorMenuGuide,
+    GmDoorMenuLearn,
+    GmDoorMenuIcon,
     GmDoorMenuExport,
     GmDoorMenuRename,
     GmDoorMenuDelete,
@@ -52,6 +54,7 @@ static bool gm_door_menu_delete(GarageMate* app) {
     if(pressed != DialogMessageButtonRight) return false;
 
     gm_store_delete(app->storage, &app->draft);
+    gm_genie_seq_delete(app->storage, app->draft.id);
     gm_store_list_remove(&app->doors, app->door_index);
     return true;
 }
@@ -65,12 +68,20 @@ void garagemate_scene_door_menu_on_enter(void* context) {
 
     submenu_add_item(submenu, "Pairing guide", GmDoorMenuGuide, gm_door_menu_callback, app);
 
+    // Genie doors are topped up by learning more codes from the remote.
+    if(app->draft_brand != NULL && app->draft_brand->kind == GmProtoGenie) {
+        submenu_add_item(submenu, "Learn more codes", GmDoorMenuLearn, gm_door_menu_callback, app);
+    }
+
     // Exporting re-derives the payload, which only managed doors can do; an
-    // imported door already is a .sub file.
-    if(app->draft.managed && app->draft_brand != NULL) {
+    // imported door already is a .sub file. Genie replays captured codes and
+    // has nothing to export.
+    if(app->draft.managed && app->draft_brand != NULL &&
+       app->draft_brand->kind != GmProtoGenie) {
         submenu_add_item(submenu, "Export .sub", GmDoorMenuExport, gm_door_menu_callback, app);
     }
 
+    submenu_add_item(submenu, "Change icon", GmDoorMenuIcon, gm_door_menu_callback, app);
     submenu_add_item(submenu, "Rename", GmDoorMenuRename, gm_door_menu_callback, app);
     submenu_add_item(submenu, "Delete", GmDoorMenuDelete, gm_door_menu_callback, app);
 
@@ -90,6 +101,17 @@ bool garagemate_scene_door_menu_on_event(void* context, SceneManagerEvent event)
         }
         app->pair_step = 0;
         scene_manager_next_scene(app->scene_manager, GmScenePair);
+        return true;
+
+    case GmDoorMenuLearn:
+        // draft.id/frequency already hold this door, which the capture scene
+        // uses to key and tune the learn session.
+        app->pair_step = 0;
+        scene_manager_next_scene(app->scene_manager, GmSceneCapture);
+        return true;
+
+    case GmDoorMenuIcon:
+        scene_manager_next_scene(app->scene_manager, GmSceneIcon);
         return true;
 
     case GmDoorMenuExport:

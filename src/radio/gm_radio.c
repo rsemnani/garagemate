@@ -1,5 +1,7 @@
 #include "gm_radio.h"
 #include "gm_generator.h"
+#include "../protocols/gm_genie.h"
+#include "../protocols/gm_registry.h"
 
 #include <furi.h>
 #include <furi_hal.h>
@@ -36,6 +38,13 @@ void gm_radio_alloc(GmRadio* radio) {
     subghz_environment_set_nice_flor_s_rainbow_table_file_name(
         radio->environment, EXT_PATH("subghz/assets/nice_flor_s"));
 
+    // A second environment whose registry includes Genie, used only for Genie
+    // transmit and receive; the main environment keeps the firmware registry so
+    // KeeLoq and Security+ still resolve their manufacturer data.
+    radio->genie_environment = subghz_environment_alloc();
+    subghz_environment_set_protocol_registry(
+        radio->genie_environment, (void*)gm_registry_get());
+
     subghz_devices_init();
     radio->device = subghz_devices_get_by_name(SUBGHZ_DEVICE_CC1101_INT_NAME);
 }
@@ -48,6 +57,9 @@ void gm_radio_free(GmRadio* radio) {
 
     subghz_environment_free(radio->environment);
     radio->environment = NULL;
+
+    subghz_environment_free(radio->genie_environment);
+    radio->genie_environment = NULL;
 }
 
 bool gm_radio_frequency_allowed(const GmRadio* radio, uint32_t frequency) {
@@ -334,6 +346,57 @@ GmTxStatus gm_radio_send_file(GmRadio* radio, Storage* storage, const char* sub_
     return status;
 }
 
+GmTxStatus gm_radio_genie_send(GmRadio* radio, uint64_t code, uint32_t frequency) {
+    furi_assert(radio);
+
+    if(!gm_radio_frequency_allowed(radio, frequency)) return GmTxErrFrequency;
+
+    SubGhzTransmitter* transmitter =
+        subghz_transmitter_alloc_init(radio->genie_environment, GM_GENIE_PROTOCOL_NAME);
+    if(transmitter == NULL) return GmTxErrPayload;
+
+    FlipperFormat* ff = flipper_format_string_alloc();
+    GmTxStatus status = GmTxErrPayload;
+    bool radio_open = false;
+
+    do {
+        // A Genie key payload is just the raw 64-bit code; the encoder lays down
+        // the waveform verbatim, replaying exactly what the remote sent.
+        uint8_t key[sizeof(uint64_t)];
+        for(size_t i = 0; i < sizeof(key); i++) {
+            key[i] = (uint8_t)(code >> (56 - 8 * i));
+        }
+        uint32_t bits = GM_GENIE_BIT_COUNT;
+
+        if(!flipper_format_write_header_cstr(ff, SUBGHZ_KEY_FILE_TYPE, SUBGHZ_KEY_FILE_VERSION))
+            break;
+        if(!flipper_format_write_uint32(ff, "Frequency", &frequency, 1)) break;
+        if(!flipper_format_write_string_cstr(ff, "Preset", GM_PRESET_NAME)) break;
+        if(!flipper_format_write_string_cstr(ff, "Protocol", GM_GENIE_PROTOCOL_NAME)) break;
+        if(!flipper_format_write_uint32(ff, "Bit", &bits, 1)) break;
+        if(!flipper_format_write_hex(ff, "Key", key, sizeof(key))) break;
+
+        flipper_format_rewind(ff);
+        if(subghz_transmitter_deserialize(transmitter, ff) != SubGhzProtocolStatusOk) break;
+
+        if(!gm_radio_begin(radio, frequency)) {
+            status = GmTxErrRadio;
+            radio_open = true;
+            break;
+        }
+        radio_open = true;
+
+        furi_hal_power_suppress_charge_enter();
+        status = gm_radio_send_transmitter(radio, transmitter);
+        furi_hal_power_suppress_charge_exit();
+    } while(false);
+
+    if(radio_open) gm_radio_end(radio);
+    flipper_format_free(ff);
+    subghz_transmitter_free(transmitter);
+    return status;
+}
+
 const char* gm_tx_status_text(GmTxStatus status) {
     switch(status) {
     case GmTxOk:
@@ -348,6 +411,8 @@ const char* gm_tx_status_text(GmTxStatus status) {
         return "Radio error";
     case GmTxErrFile:
         return "File missing or unreadable";
+    case GmTxErrNoCodes:
+        return "No codes left - learn again";
     default:
         return "Unknown error";
     }

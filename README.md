@@ -36,28 +36,46 @@ automates the radio half and talks you through the physical half.
 | Chamberlain vintage, DIP switches | Cham_Code | ✅ Yes |
 | CAME, Nice FLO, Princeton, Linear / Multi-Code gates | fixed code | ✅ Yes |
 | DoorHan, Beninca, AN-Motors and other KeeLoq gates | KeeLoq | ✅ Yes |
-| **Genie / Overhead Door (Intellicode)** | Intellicode | ❌ **No — see below** |
+| **Genie / Overhead Door (Intellicode)** | Intellicode | ✅ **Learn-and-replay — see below** |
 
-### Genie / Intellicode is not supported
+### Genie / Intellicode — learned from your own remote
 
 The official Flipper firmware ships **no Genie protocol at all** — the string
-"Genie" does not appear anywhere in the firmware binary. There is nothing to
-generate and nothing to pair with, so this is not something the app can work
-around. Picking "Genie / Overhead Door" in the app shows an explanation and your
-actual options instead of pretending to work.
+"Genie" does not appear anywhere in the firmware binary — and Intellicode's
+rolling code cannot be computed, because the algorithm lives inside the remote.
+So neither "clone a remote" nor "generate a new one" is possible for anyone.
 
-Your options, in order of how well they work:
+GarageMate takes the one route that *does* work, the same principle as
+[ratgdo](https://github.com/ratgdo) but over the air instead of over wires:
+**it becomes a remote you already own.** It bundles a from-scratch Genie
+decoder/encoder (the firmware has none), learns real codes off the air as you
+press your remote, and replays them.
 
-1. **Buy a Genie remote or wireless keypad.** Cheapest and always works.
-2. **Use a third-party Genie recorder app** ([jamisonderek's
-   genie-recorder](https://github.com/jamisonderek/flipper-zero-tutorials/tree/main/subghz/apps/genie-recorder)),
-   which records rolling codes from a Genie remote you already own and can send
-   the next one. It needs the original remote — it does not pair a new one.
-3. **Check the age of the unit.** Genie openers from before roughly 1995 use DIP
-   switches, not Intellicode. If yours has a row of tiny switches, pick
-   "Fixed-code gate" in GarageMate and it will pair.
+How to use it — no wiring, no soldering:
 
-See [docs/PROTOCOLS.md](docs/PROTOCOLS.md) for the full reasoning.
+1. Take your Genie remote **away from the garage**, out of the opener's range.
+2. In GarageMate: add a Genie door, then **learn** — press your remote next to
+   the Flipper a handful of times. Each press stores one code the opener has not
+   seen.
+3. At the garage, press **OPEN**. The Flipper sends the next stored code; the
+   opener accepts the small forward jump and re-syncs to it.
+4. When the batch runs low, learn again. Your real remote keeps working
+   alongside it.
+
+Why this is sound rather than a security break: Genie's sequence is only 16-bit
+and cyclic, you are duplicating the forward codes of **your own** remote, and
+the opener resyncs to them exactly as it would to that remote. Details and the
+protocol port are in [docs/GENIE.md](docs/GENIE.md).
+
+> Older Genie units (pre-1995) use DIP switches, not Intellicode — a row of tiny
+> switches on the remote. Pick "Fixed-code gate" for those; no capture needed.
+
+### Per-door icons
+
+Each door carries an icon so the list is scannable — a **garage door** (the
+default), a **gate**, or a **light / other** for the RF relays these clickers
+often drive (shop lights, pumps, outlets). Change it from a door's
+**More → Change icon**.
 
 ---
 
@@ -296,8 +314,13 @@ Tested against a Flipper Zero on firmware 1.3.4 (API 86.0, target 7):
 - ✅ Cham_Code fixed code — 9-bit payload generated and exported
 - ✅ KeeLoq — transmitted at 433.92 MHz
 - ✅ Exported `.sub` files match the stock format
-- ✅ Settings persist; Genie explanation path, help and wizard screens all
-  navigate without crashing
+- ✅ Settings persist; help and wizard screens navigate without crashing
+- ✅ Genie learn-and-replay — the receiver comes up and tears down cleanly on
+  the capture screen (heap fully recovered, no leak), the sequence file persists,
+  a stored code transmits and advances the playback cursor, and an empty batch
+  fails safely instead of crashing. *Not verified: decoding a live Genie remote
+  or operating a real Genie opener — needs the physical hardware.*
+- ✅ Per-door icons render in the custom list and persist across restarts
 - ✅ Security+ 2.0 serials conform to the `0x7FFFF3FC` 850LM pattern and the
   counter starts at `0xE500000`, both checked by reading the generated record
   off the SD card

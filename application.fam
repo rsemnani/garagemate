@@ -14,7 +14,9 @@ App(
         "src/*.c",
         "src/catalog/*.c",
         "src/model/*.c",
+        "src/protocols/*.c",
         "src/radio/*.c",
         "src/scenes/*.c",
+        "src/views/*.c",
     ],
 )

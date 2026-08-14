@@ -133,23 +133,16 @@ around — the capability does not exist in the firmware it runs on.
 Intellicode is also a rolling code, so recording one press and replaying it does
 not open anything.
 
-### What actually works
+### So GarageMate implements Genie itself
 
-1. **A genuine Genie remote or wireless keypad.** Around $20–35, works
-   perfectly, and pairs with the same LEARN-button dance.
-2. **[genie-recorder](https://github.com/jamisonderek/flipper-zero-tutorials/tree/main/subghz/apps/genie-recorder)**
-   — a separate Flipper app that implements the Genie protocol in the app rather
-   than the firmware. You press the button on a Genie remote you already own
-   while it records rolling codes; it can then send the next code in the
-   sequence. Note the shape of this: it *borrows* an existing remote's sequence.
-   It does not pair a new remote, and it needs the original in hand.
-3. **Check whether it is actually Intellicode.** Genie units from before roughly
-   1995 use DIP switches. If the remote has a row of tiny switches, it is a
-   fixed code — choose "Fixed-code gate" in GarageMate and it will pair
-   normally.
+Rather than declare Genie unsupported, GarageMate carries its own Genie protocol
+(the firmware has none) and uses it to **learn codes from a remote you own and
+replay them** — the "become your own remote" approach. The 16-bit cyclic
+sequence and the forward-resync window are what make it work. Full write-up,
+including the protocol port and its honest limits, is in [GENIE.md](GENIE.md).
 
-Third-party firmware forks have carried Genie patches at various times; if you
-go that route, verify support in the fork you install rather than assuming.
+If you'd rather not: a genuine Genie remote/keypad is ~$20–35, and pre-1995
+Genie units use DIP switches (pick "Fixed-code gate" for those).
 
 ---
 

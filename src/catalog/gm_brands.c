@@ -1,4 +1,5 @@
 #include "gm_brands.h"
+#include "../protocols/gm_genie.h"
 
 #include <furi.h>
 
@@ -65,19 +66,28 @@ static const GmPairStep steps_chamberlain_fixed[] = {
 };
 
 static const GmPairStep steps_genie[] = {
-    {.title = "Not supported",
-     "Genie Intellicode is a rolling code, and the official Flipper firmware "
-     "ships no Genie protocol at all -- there is nothing to generate or pair "
-     "with."},
-    {.title = "What works",
-     "1. Genie's own remote or keypad (cheapest, always works).\n\n"
-     "2. A third-party 'Genie recorder' app, which replays codes captured "
-     "from a remote you already own.\n\n"
-     "See docs/PROTOCOLS.md."},
-    {.title = "Older Genie",
+    {.title = "1. How this works",
+     "Genie's rolling code can't be generated -- only your own remote knows "
+     "the sequence. So GarageMate learns codes from it over the air, then "
+     "plays them back. You need your Genie remote."},
+    {.title = "2. Leave the garage",
+     "Move away from the garage, out of the opener's range (across the house "
+     "or outside).\n\n"
+     "This matters: codes you capture must be ones the opener has NOT seen, so "
+     "it accepts them later."},
+    {.title = "3. Learn codes",
+     "On the next screen, hold your Genie remote near the Flipper and press "
+     "its button several times. Each press adds one code.\n\n"
+     "Capture 5-10, then press BACK.",
+     true},
+    {.title = "4. At the garage",
+     "Come back and press OPEN. The Flipper sends the next learned code and "
+     "the opener re-syncs to it.\n\n"
+     "When the batch runs low, learn again. Your real remote keeps working."},
+    {.title = "Older Genie?",
      "Genie units from before roughly 1995 use DIP switches, not Intellicode. "
      "If yours has a row of little switches, pick\n"
-     "'Fixed-code gate' instead -- that one GarageMate can pair."},
+     "'Fixed-code gate' instead -- no capture needed."},
 };
 
 static const GmPairStep steps_keeloq[] = {
@@ -176,16 +186,16 @@ static const GmBrand brands[] = {
     {
         .id = "genie",
         .display = "Genie / Overhead Door",
-        .hint = "Intellicode - read this first",
-        .kind = GmProtoManual,
-        .protocol = NULL,
+        .hint = "Intellicode - learn from remote",
+        .kind = GmProtoGenie,
+        .protocol = "Genie",
         .keeloq_mfg = NULL,
-        .bits = 0,
+        .bits = GM_GENIE_BIT_COUNT,
         .te = 0,
         .freqs = {315000000, 390000000},
         .freq_count = 2,
         .button = 0,
-        .frame_repeat = 10,
+        .frame_repeat = 0,
         .rolling = true,
         .steps = steps_genie,
         .step_count = COUNT_OF(steps_genie),

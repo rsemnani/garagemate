@@ -28,11 +28,15 @@ typedef enum {
     GmTxErrRadio,
     /** The imported .sub file is missing or unreadable. */
     GmTxErrFile,
+    /** A Genie door has no learned codes left to send. */
+    GmTxErrNoCodes,
 } GmTxStatus;
 
 /** Radio context, allocated once for the lifetime of the app. */
 typedef struct {
     SubGhzEnvironment* environment;
+    /** Carries the Genie protocol, which the firmware registry lacks. */
+    SubGhzEnvironment* genie_environment;
     const SubGhzDevice* device;
 } GmRadio;
 
@@ -67,6 +71,15 @@ GmTxStatus gm_radio_export(
 
 /** Transmit an existing .sub file verbatim, used by imported doors. */
 GmTxStatus gm_radio_send_file(GmRadio* radio, Storage* storage, const char* sub_path);
+
+/**
+ * Transmit one captured Genie @p code at @p frequency.
+ *
+ * Genie codes are replayed verbatim -- there is no generator -- so this builds
+ * a Genie key payload straight from the 64-bit value and sends it through the
+ * Genie-aware environment. The caller advances its sequence on success.
+ */
+GmTxStatus gm_radio_genie_send(GmRadio* radio, uint64_t code, uint32_t frequency);
 
 /** @return true when @p frequency may legally be transmitted on this device. */
 bool gm_radio_frequency_allowed(const GmRadio* radio, uint32_t frequency);

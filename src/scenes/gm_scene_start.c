@@ -24,26 +24,25 @@ static void gm_scene_start_callback(void* context, uint32_t index) {
 
 void garagemate_scene_start_on_enter(void* context) {
     GarageMate* app = context;
-    Submenu* submenu = app->submenu;
+    GmDoorListView* list = app->door_list;
 
-    submenu_reset(submenu);
-    submenu_set_header(submenu, app->doors.count > 0 ? "Your doors" : GM_APP_NAME);
+    gm_doorlist_reset(list);
+    gm_doorlist_set_callback(list, gm_scene_start_callback, app);
 
     for(size_t i = 0; i < app->doors.count; i++) {
-        submenu_add_item(
-            submenu, app->doors.items[i].name, i, gm_scene_start_callback, app);
+        gm_doorlist_add_door(
+            list, app->doors.items[i].name, gm_icon_sanitize(app->doors.items[i].icon), i);
     }
 
-    submenu_add_item(submenu, "Add a door", GmStartActionAdd, gm_scene_start_callback, app);
-    submenu_add_item(
-        submenu, "Import saved .sub", GmStartActionImport, gm_scene_start_callback, app);
-    submenu_add_item(submenu, "Settings", GmStartActionSettings, gm_scene_start_callback, app);
-    submenu_add_item(submenu, "How this works", GmStartActionHelp, gm_scene_start_callback, app);
+    gm_doorlist_add_action(list, "Add a door", GmStartActionAdd);
+    gm_doorlist_add_action(list, "Import saved .sub", GmStartActionImport);
+    gm_doorlist_add_action(list, "Settings", GmStartActionSettings);
+    gm_doorlist_add_action(list, "How this works", GmStartActionHelp);
 
-    submenu_set_selected_item(
-        submenu, scene_manager_get_scene_state(app->scene_manager, GmSceneStart));
+    gm_doorlist_set_selected(
+        list, scene_manager_get_scene_state(app->scene_manager, GmSceneStart));
 
-    view_dispatcher_switch_to_view(app->view_dispatcher, GmViewSubmenu);
+    view_dispatcher_switch_to_view(app->view_dispatcher, GmViewDoorList);
 }
 
 bool garagemate_scene_start_on_event(void* context, SceneManagerEvent event) {
@@ -83,5 +82,5 @@ bool garagemate_scene_start_on_event(void* context, SceneManagerEvent event) {
 
 void garagemate_scene_start_on_exit(void* context) {
     GarageMate* app = context;
-    submenu_reset(app->submenu);
+    gm_doorlist_reset(app->door_list);
 }

@@ -40,6 +40,8 @@ typedef enum {
     GmProtoKeeLoq,
     /** Fixed-code protocols (Cham_Code, Princeton, CAME, Nice FLO, Linear). */
     GmProtoFixed,
+    /** Genie Intellicode: learned from your remote over the air, then replayed. */
+    GmProtoGenie,
     /** No generator available -- the walkthrough explains the alternative. */
     GmProtoManual,
 } GmProtoKind;
