@@ -1,0 +1,14 @@
+# Build output
+dist/
+build/
+*.fap
+*.elf
+*.o
+
+# ufbt / editor scratch
+.ufbt/
+.vscode/
+compile_commands.json
+
+# macOS
+.DS_Store

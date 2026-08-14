@@ -1,0 +1,20 @@
+App(
+    appid="garagemate",
+    name="GarageMate",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="garagemate_app",
+    stack_size=4 * 1024,
+    fap_category="Sub-GHz",
+    fap_icon="icons/garagemate_10px.png",
+    fap_author="rsemnani",
+    fap_version="1.0",
+    fap_description="Guided setup for garage door and gate remotes: create a virtual remote, "
+    "pair it with the opener, and open doors from a named list.",
+    sources=[
+        "src/*.c",
+        "src/catalog/*.c",
+        "src/model/*.c",
+        "src/radio/*.c",
+        "src/scenes/*.c",
+    ],
+)
