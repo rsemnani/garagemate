@@ -105,20 +105,34 @@ name was passed to the generator in the wrong form — see the note in
 
 ## Debugging on the device
 
-The Flipper's serial CLI is at `/dev/cu.usbmodemflip_*` on macOS, 230400 baud.
-Useful commands:
+`tools/flipper_cli.py` wraps the Flipper's serial CLI (230400 baud, one session
+at a time — close qFlipper first):
 
-```
-info device                     # firmware version, API, region
-loader info                     # which app is running
-free                            # heap, for spotting leaks
-storage list /ext/apps_data/garagemate/doors
-storage read <path>
+```bash
+python3 tools/flipper_cli.py cmd "info device" "loader info" "free"
+python3 tools/flipper_cli.py cmd "storage list /ext/apps_data/garagemate/doors"
 ```
 
-You can also drive the UI from the CLI, which is handy for automated smoke
-tests. One catch: `ViewDispatcher` **discards a `short` event that was not
-preceded by a `press`** for the same key, so send all three:
+Useful commands: `info device` (firmware version, API, region), `loader info`
+(which app is running), `free` (heap, for spotting leaks), `storage read <path>`.
+
+It can also drive the UI, which is what makes automated smoke tests on real
+hardware possible:
+
+```bash
+python3 tools/flipper_cli.py tap ok right down ok
+```
+
+**The gotcha it exists to hide:** `ViewDispatcher` discards a `short` or `long`
+event that was not preceded by a `press` for the same key — it logs
+"non-complementary input, discarding" and moves on. So this does nothing at all,
+while looking like it worked:
+
+```
+input send ok short
+```
+
+All three events must be sent:
 
 ```
 input send ok press
@@ -127,5 +141,5 @@ input send ok release
 ```
 
 Key and type names are lowercase (`ok`, `back`, `up`, `down`, `left`, `right` /
-`press`, `release`, `short`, `long`). A single `input send ok short` looks like
-it succeeds and does nothing.
+`press`, `release`, `short`, `long`); capitalised names are rejected with a
+usage message.

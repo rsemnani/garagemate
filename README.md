@@ -69,16 +69,15 @@ See [docs/PROTOCOLS.md](docs/PROTOCOLS.md) for the full reasoning.
 
 ## Frequencies: turn on "All frequencies"
 
-Out of the box this Flipper is region-provisioned **US**, which permits roughly
-304–322 MHz, 433.05–434.79 MHz and 915–928 MHz. **390 MHz is not in that list**
-— and plenty of Chamberlain and LiftMaster openers use 390 MHz, including the
-`Sk_upper.sub` already on your SD card.
+A US-provisioned Flipper permits roughly 304–322 MHz, 433.05–434.79 MHz and
+915–928 MHz. **390 MHz is not in that list** — and plenty of Chamberlain and
+LiftMaster openers use 390 MHz, so out of the box those are unreachable.
 
 **Settings → All frequencies → ON** fixes that. It widens the region table to
 everything the CC1101 can physically tune (300–348, 387–464, 779–928 MHz), so
 390 MHz — along with 310, 318 and 868 MHz — becomes usable.
 
-Measured on the hardware, same 390 MHz door either way:
+Measured on real hardware, same 390 MHz door either way:
 
 | All frequencies | Result |
 | --- | --- |
@@ -111,37 +110,51 @@ equipment you own.
 
 ## Install
 
-It is **already installed** on the connected Flipper at
-`SD Card/apps/Sub-GHz/garagemate.fap` — open **Apps → Sub-GHz → GarageMate**.
+GarageMate builds with [ufbt](https://github.com/flipperdevices/flipperzero-ufbt),
+the official Flipper application build tool. You need Python 3 and a USB cable.
 
-To build it again (build output lands in `dist/`, which is not committed):
+### 1. Check which firmware your Flipper runs
+
+A `.fap` only loads if it was built against a **matching firmware API version**,
+so this step is not optional. On the Flipper: **Settings → About**. Or over USB:
 
 ```bash
 pip3 install ufbt
-
-# Pin the SDK to the firmware your Flipper actually runs (see below)
-ufbt update -t f7 --url https://update.flipperzero.one/builds/firmware/1.3.4/flipper-z-f7-sdk-1.3.4.zip
-
-ufbt              # build
-ufbt launch       # build, upload and start it on a connected Flipper
+ufbt cli
+>: info device        # read firmware.version and firmware.api.major
 ```
 
-To put it on another Flipper, copy `dist/garagemate.fap` to
-`SD Card/apps/Sub-GHz/` with qFlipper or the mobile app.
-
-### Matching the SDK to your firmware
-
-A `.fap` only loads if its API version matches the firmware. Check yours:
+### 2. Build
 
 ```bash
-# firmware.version and firmware.api.major
-ufbt cli
-> info device
+git clone https://github.com/rsemnani/garagemate.git
+cd garagemate
+
+# Pin the SDK to YOUR firmware version — substitute it into the URL
+ufbt update -t f7 --url https://update.flipperzero.one/builds/firmware/1.3.4/flipper-z-f7-sdk-1.3.4.zip
+
+ufbt                  # -> dist/garagemate.fap
 ```
 
-This repo is built and tested against **firmware 1.3.4, API 86.0, hardware
-target 7**. For a different firmware, change the version in the `ufbt update`
-URL, or run plain `ufbt update` for the current release.
+If your Flipper is on the current official release, plain `ufbt update` fetches
+the right SDK and you can skip the URL.
+
+### 3. Put it on the Flipper
+
+With the Flipper connected:
+
+```bash
+ufbt launch           # build, upload and start it
+```
+
+Or copy `dist/garagemate.fap` onto the SD card at `apps/Sub-GHz/` using
+[qFlipper](https://flipperzero.one/update) or the mobile app.
+
+Either way it then appears on the Flipper under **Apps → Sub-GHz → GarageMate**.
+
+> Built and tested against firmware **1.3.4 (API 86.0, hardware target 7)**.
+> Other 1.x firmwares should work once the SDK is pinned to match; the app uses
+> only published API symbols.
 
 ---
 
@@ -154,7 +167,7 @@ URL, or run plain `ufbt update` for the current release.
    switches") is usually enough to identify it. If unsure, look at the motor
    unit, not the remote.
 3. **Pick the frequency.** It is printed on the back of your existing remote.
-   Anything marked `(blocked)` cannot be transmitted by this Flipper.
+   Anything marked `(blocked)` is outside your Flipper's region — see above.
 4. **Name it** — "Left bay", "Side gate".
 5. **Follow the pairing steps.** The app walks you through finding the LEARN
    button, pressing it, and transmitting. Step 3 has a **Send** button.
@@ -246,6 +259,8 @@ get a **Send** button with `.transmit = true`.
 application.fam            App manifest (ufbt)
 icons/                     10x10 app icon
 tools/make_icon.py         Regenerates the icon from readable pixel art
+tools/flipper_cli.py       Runs CLI commands and injects button presses,
+                           for smoke-testing on real hardware
 src/
   garagemate.c             Entry point, wiring, shared helpers
   garagemate_i.h           Shared application state

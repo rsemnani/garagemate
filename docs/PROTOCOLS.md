@@ -104,8 +104,8 @@ Two independent checks must both pass before the radio transmits:
 2. **Region policy** — if the Flipper has been provisioned with region data
    (`/int/.region_data`), that table narrows it further.
 
-This device is provisioned **US**, which permits about 304–322 MHz,
-433.05–434.79 MHz and 915–928 MHz. Measured on the hardware:
+A **US**-provisioned device permits about 304–322 MHz, 433.05–434.79 MHz and
+915–928 MHz. Measured on hardware:
 
 | Frequency | Result |
 | --- | --- |
