@@ -196,6 +196,24 @@ Full per-brand instructions: [docs/PAIRING.md](docs/PAIRING.md).
 Pick it from the list and press **OK**. Turn on *Hold to open* in Settings if
 you'd rather not open the garage from your pocket.
 
+### Two presses from the desktop
+
+GarageMate reopens on the door you used last, so pulling up to the garage is one
+press to launch and one to open. **Back** steps out to the full list as usual.
+
+To get the launch down to a single press, bind the app to a desktop button:
+**Settings → Desktop → Set Quick Access Apps → Default Mode → Left - Press**,
+then choose GarageMate under *Sub-GHz*. From the desktop, **Left** now goes
+straight to your last door.
+
+Stock firmware only lets you bind *Left - Press*, *Right - Press*, *Left - Hold*
+and *Right - Hold*. The Up and Down buttons are hardcoded (lock menu, archive and
+debug) and cannot be reassigned without building custom firmware.
+
+Note that a quick-access button plus one **OK** opens the door with no other
+confirmation. That is the point, but if the Flipper rides loose in a pocket or a
+door pocket, turn on *Hold to open*.
+
 ### Importing an existing signal
 
 **Add a door → Import saved .sub** adopts a signal made by the stock Sub-GHz
@@ -321,6 +339,9 @@ Tested against a Flipper Zero on firmware 1.3.4 (API 86.0, target 7):
   fails safely instead of crashing. *Not verified: decoding a live Genie remote
   or operating a real Genie opener — needs the physical hardware.*
 - ✅ Per-door icons render in the custom list and persist across restarts
+- ✅ Launching reopens the last door: selecting it writes `LastDoor` to
+  `settings.conf`, and a fresh launch lands two scenes deep — one **Back**
+  returns to the list, a second exits the app
 - ✅ Security+ 2.0 serials conform to the `0x7FFFF3FC` 850LM pattern and the
   counter starts at `0xE500000`, both checked by reading the generated record
   off the SD card

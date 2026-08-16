@@ -42,6 +42,14 @@ void garagemate_scene_door_on_enter(void* context) {
     app->draft_brand = gm_brand_by_id(door->brand_id);
     app->draft_is_new = false;
 
+    // Remember this door so the next launch comes straight back here. Only
+    // written when it actually changes, so arriving via the launch shortcut
+    // does not rewrite the settings file every time.
+    if(strcmp(app->settings.last_door_id, door->id) != 0) {
+        strlcpy(app->settings.last_door_id, door->id, sizeof(app->settings.last_door_id));
+        gm_settings_save(app->storage, &app->settings);
+    }
+
     Widget* widget = app->widget;
     widget_reset(widget);
 

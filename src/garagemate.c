@@ -131,6 +131,19 @@ static void garagemate_free(GarageMate* app) {
     free(app);
 }
 
+/**
+ * @return the index of the door with @p id, or GM_DOORS_MAX when no door
+ *         carries that id -- including when @p id is empty.
+ */
+static size_t garagemate_find_door(const GmDoorList* doors, const char* id) {
+    if(id == NULL || id[0] == '\0') return GM_DOORS_MAX;
+
+    for(size_t i = 0; i < doors->count; i++) {
+        if(strcmp(doors->items[i].id, id) == 0) return i;
+    }
+    return GM_DOORS_MAX;
+}
+
 int32_t garagemate_app(void* p) {
     UNUSED(p);
 
@@ -139,6 +152,17 @@ int32_t garagemate_app(void* p) {
     view_dispatcher_attach_to_gui(
         app->view_dispatcher, app->gui, ViewDispatcherTypeFullscreen);
     scene_manager_next_scene(app->scene_manager, GmSceneStart);
+
+    // Walking up to the garage should be one button to launch and one to open,
+    // so skip the list and land on the door used last. Pushing it on top of the
+    // start scene rather than replacing it keeps Back stepping out to the list.
+    size_t last = garagemate_find_door(&app->doors, app->settings.last_door_id);
+    if(last != GM_DOORS_MAX) {
+        app->door_index = last;
+        scene_manager_set_scene_state(app->scene_manager, GmSceneStart, last);
+        scene_manager_next_scene(app->scene_manager, GmSceneDoor);
+    }
+
     view_dispatcher_run(app->view_dispatcher);
 
     garagemate_free(app);

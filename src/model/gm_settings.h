@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include "gm_door.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <storage/storage.h>
@@ -38,6 +40,15 @@ typedef struct {
      * transmitted on. See radio/gm_region.h.
      */
     bool unlock_frequencies;
+    /**
+     * Id of the door opened most recently, or an empty string when there is
+     * none yet.
+     *
+     * The app jumps straight to this door's screen on launch, so that walking
+     * up to the garage is: quick-access button, then OK. Back still steps out
+     * to the full list.
+     */
+    char last_door_id[GM_ID_MAX];
 } GmSettings;
 
 /** Populate @p settings with defaults. */

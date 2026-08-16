@@ -15,6 +15,7 @@ void gm_settings_default(GmSettings* settings) {
     settings->feedback = true;
     settings->hold_to_open = false;
     settings->unlock_frequencies = false;
+    settings->last_door_id[0] = '\0';
 }
 
 void gm_settings_load(Storage* storage, GmSettings* settings) {
@@ -52,6 +53,14 @@ void gm_settings_load(Storage* storage, GmSettings* settings) {
 
         flipper_format_rewind(ff);
         flipper_format_read_bool(ff, "UnlockFrequencies", &settings->unlock_frequencies, 1);
+
+        flipper_format_rewind(ff);
+        if(flipper_format_read_string(ff, "LastDoor", buffer)) {
+            strlcpy(
+                settings->last_door_id,
+                furi_string_get_cstr(buffer),
+                sizeof(settings->last_door_id));
+        }
     } while(false);
 
     furi_string_free(buffer);
@@ -80,6 +89,12 @@ bool gm_settings_save(Storage* storage, const GmSettings* settings) {
 
         bool unlock = settings->unlock_frequencies;
         if(!flipper_format_write_bool(ff, "UnlockFrequencies", &unlock, 1)) break;
+
+        // Skipped rather than written empty: a bare key reads back as an empty
+        // value on some FlipperFormat versions, and absent means the same thing.
+        if(settings->last_door_id[0] != '\0') {
+            if(!flipper_format_write_string_cstr(ff, "LastDoor", settings->last_door_id)) break;
+        }
 
         ok = true;
     } while(false);
