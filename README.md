@@ -202,9 +202,14 @@ GarageMate reopens on the door you used last, so pulling up to the garage is one
 press to launch and one to open. **Back** steps out to the full list as usual.
 
 To get the launch down to a single press, bind the app to a desktop button:
-**Settings → Desktop → Set Quick Access Apps → Default Mode → Left - Press**,
-then choose GarageMate under *Sub-GHz*. From the desktop, **Left** now goes
+**Settings → Desktop → Set Quick Access Apps → Default Mode → Left - Press →
+`[Select App]` → Sub-GHz → GarageMate**. From the desktop, **Left** now goes
 straight to your last door.
+
+Take the `[Select App]` branch, the second entry. GarageMate is an external app
+on the SD card, so it is not in the list of built-in apps below it. The first
+entry, *Apps Menu (Default)*, is pre-selected and stores an empty slot — pick it
+by accident and Left just opens the app folders.
 
 Stock firmware only lets you bind *Left - Press*, *Right - Press*, *Left - Hold*
 and *Right - Hold*. The Up and Down buttons are hardcoded (lock menu, archive and
